@@ -322,14 +322,16 @@ public class PieceScript : MonoBehaviour
         //White Castles
         if (BoardScript.board[iy, ix] == 'K' && iy == 7 && System.Math.Abs(ix - fx) == 2)
         {
-            if (fx == 2)//White Long Castle
+            //White Long Castle
+            if (fx == 2)
             {
                 BoardScript.board[7, 2] = BoardScript.board[7, 4];
                 BoardScript.board[7, 4] = '#';
                 BoardScript.board[7, 0] = '#';
                 BoardScript.board[7, 3] = 'R';
             }
-            if (fx == 6)//White Short Castles
+            //White Short Castles
+            if (fx == 6)
             {
                 BoardScript.board[7, 6] = BoardScript.board[7, 4];
                 BoardScript.board[7, 4] = '#';
@@ -348,9 +350,10 @@ public class PieceScript : MonoBehaviour
                 BoardScript.board[0, 0] = '#';
                 BoardScript.board[0, 3] = 'r';
             }
+            //Black Short Castle
             if (fx == 6)
             {
-                BoardScript.board[0, 6] = BoardScript.board[7, 4];
+                BoardScript.board[0, 6] = BoardScript.board[0, 4];
                 BoardScript.board[0, 4] = '#';
                 BoardScript.board[0, 7] = '#';
                 BoardScript.board[0, 5] = 'r';
@@ -433,8 +436,13 @@ public class PieceScript : MonoBehaviour
             BoardScript.board[fy, fx] = BoardScript.board[iy, ix];
             BoardScript.board[iy, ix] = '#';
         }
+        BoardScript.boardStack.Push(BoardScript.board);
     }
 
+    void undoMove(int iy, int ix, int fy, int fx)
+    {
+
+    }
     void setFalse(bool[] myArray)
     {
         for (int i = 0; i < myArray.Length; i++)

@@ -33,6 +33,7 @@ public class BoardScript : MonoBehaviour
     public static bool whiteTurn = true;
     public static bool gameOn = true;
     public static GameObject[,] UnityBoard = new GameObject[8, 8];
+
     public static void PrintCharArray(char[,] array)
     {
         int rows = array.GetLength(0);
@@ -48,7 +49,6 @@ public class BoardScript : MonoBehaviour
             Debug.Log(line);
         }
     }
-
     public void DisplayBoard(char[,] array)
     {
         for (int i = 0; i < 8; i++)
@@ -134,7 +134,7 @@ public class BoardScript : MonoBehaviour
                 UnityBoard[i, j] = null;
             }
         }
-        DisplayBoard(board);
+        DisplayBoard(boardStack.Peek());
     }
     public void boardSetUp()
     {
@@ -181,6 +181,12 @@ public class BoardScript : MonoBehaviour
                 col += (startingPos[index] - '0');
             }
         }
+        boardStack.Push(board);
         DisplayBoard(board);
+    }
+
+    private void Update()
+    {
+        
     }
 }
