@@ -27,12 +27,16 @@ public class BoardScript : MonoBehaviour
     public static bool whiteCanShortCastle = true;
     public static bool blackCanLongCastle = true;
     public static bool blackCanShortCastle = true;
+    public static bool whiteCanCastle = true;
+    public static bool blackCanCastle = true;
     public static (int row, int col) whiteKingPos = (7, 4);
     public static (int row, int col) blackKingPos = (0, 4);
     public static char[,] board = new char[8, 8];
     public static bool whiteTurn = true;
     public static bool gameOn = true;
     public static GameObject[,] UnityBoard = new GameObject[8, 8];
+    public static List<Move> whiteMoves;
+    public static List<Move> blackMoves;
 
     public static void PrintCharArray(char[,] array)
     {
@@ -182,6 +186,14 @@ public class BoardScript : MonoBehaviour
             }
         }
         DisplayBoard(board);
+    }
+    public static void PrintPieceLocations(HashSet<(int row, int col)> pieces)
+    {
+        Debug.Log("Pieces at: ");
+        foreach ((int row, int col) in pieces)
+        {
+            Debug.Log($"Piece at: ({row}, {col})");
+        }
     }
 
 }

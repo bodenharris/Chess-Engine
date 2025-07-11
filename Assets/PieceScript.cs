@@ -22,7 +22,7 @@ public class PieceScript : MonoBehaviour
         pos.y = Mathf.Round(pos.y);
         int fx = Mathf.RoundToInt(pos.x);
         int fy = Mathf.RoundToInt(pos.y);
-        if (!moveIsLegal(iy, ix, fy, fx))
+        if (!moveIsPsuedoLegal(iy, ix, fy, fx))
         {
             transform.position = new Vector3(ix, iy, transform.position.z);
         }
@@ -33,13 +33,12 @@ public class PieceScript : MonoBehaviour
             makeMove(move);
             BoardScript unityBoard = FindObjectOfType<BoardScript>();
             unityBoard.updateDisplayBoard();
-            BoardScript.PrintCharArray(BoardScript.board);
             BoardScript.whiteTurn = !BoardScript.whiteTurn;
         }
 
     }
 
-    public static bool moveIsLegal(int iy, int ix, int fy, int fx)
+    public static bool moveIsPsuedoLegal(int iy, int ix, int fy, int fx)
     {
         //Out of bounds
         if (fx > 7 || fx < 0 || fy > 7 || fy < 0)
@@ -155,24 +154,26 @@ public class PieceScript : MonoBehaviour
                 {
                     break;
                 }
-                else if (char.IsUpper(BoardScript.board[iy, ix]) && iy == 7 && fy == 7 && System.Math.Abs(ix - fx) == 2 && !squareIsAttacked(7, 4)) //White Castles
+                //White Castles
+                else if (char.IsUpper(BoardScript.board[iy, ix]) && iy == 7 && fy == 7 && System.Math.Abs(ix - fx) == 2 && !squareIsAttacked(7, 4)) 
                 {
-                    if (BoardScript.whiteCanLongCastle && fx == 2 && BoardScript.board[7, 3] == '#' && BoardScript.board[7, 2] == '#' && BoardScript.board[7, 1] == '#' && !squareIsAttacked(7, 3) && !squareIsAttacked(7, 2))
+                    if (BoardScript.whiteCanLongCastle && BoardScript.whiteCanCastle && fx == 2 && BoardScript.board[7, 3] == '#' && BoardScript.board[7, 2] == '#' && BoardScript.board[7, 1] == '#' && !squareIsAttacked(7, 3) && !squareIsAttacked(7, 2))
                     {
                         break;
                     }
-                    if (BoardScript.whiteCanShortCastle && fx == 6 && BoardScript.board[7, 5] == '#' && BoardScript.board[7, 6] == '#' && !squareIsAttacked(7, 5) && !squareIsAttacked(7, 4))
+                    if (BoardScript.whiteCanShortCastle && BoardScript.whiteCanCastle && fx == 6 && BoardScript.board[7, 5] == '#' && BoardScript.board[7, 6] == '#' && !squareIsAttacked(7, 5) && !squareIsAttacked(7, 4))
                     {
                         break;
                     }
                 }
-                else if (char.IsLower(BoardScript.board[iy, ix]) && iy == 0 && fy == 0 && System.Math.Abs(ix - fx) == 2 && !squareIsAttacked(0, 4)) //Black Castles
+                //Black Castles
+                else if (char.IsLower(BoardScript.board[iy, ix]) && iy == 0 && fy == 0 && System.Math.Abs(ix - fx) == 2 && !squareIsAttacked(0, 4)) 
                 {
-                    if (BoardScript.blackCanLongCastle && fx == 2 && BoardScript.board[0, 3] == '#' && BoardScript.board[0, 2] == '#' && BoardScript.board[0, 1] == '#' && !squareIsAttacked(0, 3) && !squareIsAttacked(0, 2))
+                    if (BoardScript.blackCanLongCastle && BoardScript.blackCanCastle && fx == 2 && BoardScript.board[0, 3] == '#' && BoardScript.board[0, 2] == '#' && BoardScript.board[0, 1] == '#' && !squareIsAttacked(0, 3) && !squareIsAttacked(0, 2))
                     {
                         break;
                     }
-                    if (BoardScript.blackCanShortCastle && fx == 6 && BoardScript.board[0, 5] == '#' && BoardScript.board[0, 6] == '#' && !squareIsAttacked(0, 5) && !squareIsAttacked(0, 6))
+                    if (BoardScript.blackCanShortCastle && BoardScript.blackCanCastle && fx == 6 && BoardScript.board[0, 5] == '#' && BoardScript.board[0, 6] == '#' && !squareIsAttacked(0, 5) && !squareIsAttacked(0, 6))
                     {
                         break;
                     }
@@ -213,8 +214,36 @@ public class PieceScript : MonoBehaviour
 
         return true;
     }
-
-    void makeMove(Move move)
+    public static bool moveIsLegal(int iy, int ix, int fy, int fx)
+    { 
+        if(moveIsPsuedoLegal(iy, ix, fy, fx))
+        {
+            Move move = new Move(iy, ix, fy, fx, BoardScript.board[iy,  ix], BoardScript.board[fy, fx]);
+            makeMove(move);
+            if (BoardScript.whiteTurn)
+            {
+                if (squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
+                {
+                    undoMove(move);
+                    return false;
+                }
+                undoMove(move);
+                return true;
+            }
+            else
+            {
+                if (squareIsAttacked(BoardScript.blackKingPos.row, BoardScript.blackKingPos.col))
+                {
+                    undoMove(move);
+                    return false;
+                }
+                undoMove(move);
+                return true;
+            }
+        }
+        return false;
+    }
+    static void makeMove(Move move)
     {
         int iy = move.iy;
         int ix = move.ix;
@@ -266,15 +295,13 @@ public class PieceScript : MonoBehaviour
         if (BoardScript.board[iy, ix] == 'K')
         {
             BoardScript.whiteKingPos = (fy, fx);
-            BoardScript.whiteCanLongCastle = false;
-            BoardScript.whiteCanShortCastle = false;
+            BoardScript.whiteCanCastle = false;
         }
         else
         if (BoardScript.board[iy, ix] == 'k')
         {
             BoardScript.blackKingPos = (fy, fx);
-            BoardScript.blackCanLongCastle = false;
-            BoardScript.blackCanShortCastle = false;
+            BoardScript.blackCanCastle = false;
         }
         //Black Castle Rights
         if (iy == 0) 
@@ -331,18 +358,23 @@ public class PieceScript : MonoBehaviour
             //White Long Castle
             if (fx == 2)
             {
-                BoardScript.board[7, 2] = BoardScript.board[7, 4];
-                BoardScript.board[7, 4] = '#';
                 BoardScript.board[7, 0] = '#';
+                BoardScript.board[7, 2] = 'K';
                 BoardScript.board[7, 3] = 'R';
+                BoardScript.board[7, 4] = '#';
+                BoardScript.whitePieces.Remove((7, 0));
+                BoardScript.whitePieces.Add((7, 3));
             }
             //White Short Castles
             if (fx == 6)
             {
-                BoardScript.board[7, 6] = BoardScript.board[7, 4];
+                
                 BoardScript.board[7, 4] = '#';
-                BoardScript.board[7, 7] = '#';
                 BoardScript.board[7, 5] = 'R';
+                BoardScript.board[7, 6] = 'K';
+                BoardScript.board[7, 7] = '#';
+                BoardScript.whitePieces.Remove((7, 7));
+                BoardScript.whitePieces.Add((7, 5));
             }
         }
         //Black Castles
@@ -351,18 +383,22 @@ public class PieceScript : MonoBehaviour
             //Black Long Castle
             if (fx == 2)
             {
-                BoardScript.board[0, 2] = BoardScript.board[0, 4];
-                BoardScript.board[0, 4] = '#';
                 BoardScript.board[0, 0] = '#';
+                BoardScript.board[0, 2] = 'k';
                 BoardScript.board[0, 3] = 'r';
+                BoardScript.board[0, 4] = '#';
+                BoardScript.blackPieces.Remove((0, 0));
+                BoardScript.blackPieces.Add((0, 3));
             }
             //Black Short Castle
             if (fx == 6)
             {
-                BoardScript.board[0, 6] = BoardScript.board[0, 4];
                 BoardScript.board[0, 4] = '#';
-                BoardScript.board[0, 7] = '#';
                 BoardScript.board[0, 5] = 'r';
+                BoardScript.board[0, 6] = 'k';
+                BoardScript.board[0, 7] = '#';        
+                BoardScript.blackPieces.Remove((0, 7));
+                BoardScript.blackPieces.Add((0, 5));
             }
         }
         //Pawn Promotion
@@ -443,7 +479,7 @@ public class PieceScript : MonoBehaviour
             BoardScript.board[iy, ix] = '#';
         }
     }
-    void undoMove(Move move)
+    static void undoMove(Move move)
     {
         int iy = move.iy;
         int ix = move.ix;
@@ -452,8 +488,21 @@ public class PieceScript : MonoBehaviour
         char piece = move.piece;
         char capture = move.capture;
 
+        //Check For King Moves
+        if(char.ToLower(piece) == 'k')
+        {
+            if (piece == 'K')
+            {
+                BoardScript.whiteKingPos = (iy, ix);
+            }
+            else
+            {
+                BoardScript.blackKingPos = (iy, ix);
+            }
+        }
+
         //Check For Castle
-        if (char.ToLower(piece) == 'k' && System.Math.Abs(fx - fy) == 2)
+        if (char.ToLower(piece) == 'k' && System.Math.Abs(ix - fx) == 2)
         {
             if (piece == 'K')
             {
@@ -464,6 +513,12 @@ public class PieceScript : MonoBehaviour
                     BoardScript.board[7, 2] = '#';
                     BoardScript.board[7, 3] = '#';
                     BoardScript.board[7, 4] = 'K';
+                    BoardScript.whiteCanLongCastle = true;
+                    BoardScript.whiteCanCastle = true;
+                    BoardScript.whitePieces.Add((7, 0));
+                    BoardScript.whitePieces.Remove((7, 2));
+                    BoardScript.whitePieces.Remove((7, 3));
+                    BoardScript.whitePieces.Add((7, 4));
                 }
                 //White Short Castles
                 if (fx == 6)
@@ -472,6 +527,12 @@ public class PieceScript : MonoBehaviour
                     BoardScript.board[7, 5] = '#';
                     BoardScript.board[7, 6] = '#';
                     BoardScript.board[7, 7] = 'R';
+                    BoardScript.whiteCanShortCastle = true;
+                    BoardScript.whiteCanCastle = true;
+                    BoardScript.whitePieces.Add((7, 4));
+                    BoardScript.whitePieces.Remove((7, 5));
+                    BoardScript.whitePieces.Remove((7, 6));
+                    BoardScript.whitePieces.Add((7, 7));
                 }
             }
             else
@@ -483,6 +544,12 @@ public class PieceScript : MonoBehaviour
                     BoardScript.board[0, 2] = '#';
                     BoardScript.board[0, 3] = '#';
                     BoardScript.board[0, 4] = 'k';
+                    BoardScript.blackCanLongCastle = true;
+                    BoardScript.blackCanCastle = true;
+                    BoardScript.blackPieces.Add((0, 0));
+                    BoardScript.blackPieces.Remove((0, 2));
+                    BoardScript.blackPieces.Remove((0, 3));
+                    BoardScript.blackPieces.Add((0, 4));
                 }
                 //Black Short Castle
                 if (fx == 6)
@@ -490,9 +557,16 @@ public class PieceScript : MonoBehaviour
                     BoardScript.board[0, 4] = 'k';
                     BoardScript.board[0, 5] = '#';
                     BoardScript.board[0, 6] = '#';            
-                    BoardScript.board[0, 7] = 'r';    
+                    BoardScript.board[0, 7] = 'r';
+                    BoardScript.blackCanShortCastle = true;
+                    BoardScript.blackCanCastle = true;
+                    BoardScript.blackPieces.Add((0, 4));
+                    BoardScript.blackPieces.Remove((0, 5));
+                    BoardScript.blackPieces.Remove((0, 6));
+                    BoardScript.blackPieces.Add((0, 7));
                 }
             }
+
             return;
         }
 
@@ -501,24 +575,42 @@ public class PieceScript : MonoBehaviour
         {
             if (piece == 'P')
             {
-                BoardScript.board[ix, iy] = 'P';
-                BoardScript.board[fx, fy] = '#';
-                BoardScript.board[fx, fy + 1] = 'p';
+                BoardScript.board[iy, ix] = 'P';
+                BoardScript.board[fy, fx] = '#';
+                BoardScript.board[fy + 1, fx] = 'p';
+                BoardScript.blackPawnsEP[fx] = true;
+                BoardScript.whitePieces.Add((iy, ix));
+                BoardScript.whitePieces.Remove((fy, fx));
+                BoardScript.blackPieces.Add((fy + 1, fx));
             }
             else
             {
-                BoardScript.board[ix, iy] = 'p';
-                BoardScript.board[fx, fy] = '#';
-                BoardScript.board[fx, fy - 1] = 'P';
+                BoardScript.board[iy, ix] = 'p';
+                BoardScript.board[fy, fx] = '#';
+                BoardScript.board[fy - 1, fx] = 'P';
+                BoardScript.whitePawnsEP[fx] = true;
+                BoardScript.blackPieces.Add((iy, ix));
+                BoardScript.blackPieces.Remove((fy, fx));
+                BoardScript.whitePieces.Add((fy - 1, fx));
             }
             return;
         }
 
         //Make Swap
-        BoardScript.board[ix, iy] = piece;
-        BoardScript.board[fx, fy] = capture;
+        BoardScript.board[iy, ix] = piece;
+        BoardScript.board[fy, fx] = capture;
+        if (char.IsUpper(piece))
+        {
+            BoardScript.whitePieces.Remove((fy, fx));
+            BoardScript.whitePieces.Add((iy, ix));
+        }
+        else
+        {
+            BoardScript.blackPieces.Remove((fy, fx));
+            BoardScript.blackPieces.Add((iy, ix));
+        }
     }
-    void setFalse(bool[] myArray)
+    static void setFalse(bool[] myArray)
     {
         for (int i = 0; i < myArray.Length; i++)
         {
@@ -526,9 +618,238 @@ public class PieceScript : MonoBehaviour
         }
     }
 
+    public static bool squareIsAttackedHelper(Move  move)
+    {
+        int iy = move.iy;
+        int ix = move.ix;
+        int fy = move.fy;
+        int fx = move.fx;
+
+        //Out of bounds
+        if (fx > 7 || fx < 0 || fy > 7 || fy < 0)
+        {
+            return false;
+        }
+
+        //Ensure Movement
+        if ((fx == ix) && (fy == iy))
+        {
+            return false;
+        }
+
+        //Check Turn
+        if (char.IsUpper(BoardScript.board[iy, ix]) == !BoardScript.whiteTurn)
+        {
+            return false;
+        }
+
+        //Space isnt covered already by own piece
+        if (BoardScript.board[fy, fx] != '#' && (BoardScript.whiteTurn == char.IsUpper(BoardScript.board[fy, fx])))
+        {
+            return false;
+        }
+
+        //Determine Piece to ensure correct movement
+        switch (char.ToLower(BoardScript.board[iy, ix]))
+        {
+            case 'r':
+                if (iy == fy)
+                {
+                    for (int i = 1; i < System.Math.Abs(ix - fx); i++)
+                    {
+                        if ((BoardScript.board[iy, ix + (i * ((ix - fx) < 0 ? 1 : -1))]) != '#')
+                        {
+                            return false;
+                        }
+                    }
+                    break;
+                }
+                if (ix == fx)
+                {
+                    for (int i = 1; i < System.Math.Abs(iy - fy); i++)
+                    {
+                        if ((BoardScript.board[iy + (i * ((iy - fy) < 0 ? 1 : -1)), ix]) != '#')
+                        {
+                            return false;
+                        }
+                    }
+                    break;
+                }
+                return false;
+
+            case 'n':
+                if ((System.Math.Abs(ix - fx) == 1 && 2 == System.Math.Abs(iy - fy)) || (System.Math.Abs(ix - fx) == 2 && 1 == System.Math.Abs(iy - fy)))
+                {
+                    break;
+                }
+                return false;
+
+            case 'b':
+                if ((System.Math.Abs(ix - fx) == System.Math.Abs(iy - fy)))
+                {
+                    for (int i = 1; i < System.Math.Abs(ix - fx); i++)
+                    {
+                        if (BoardScript.board[iy + (i * ((iy - fy) < 0 ? 1 : -1)), ix + (i * ((ix - fx) < 0 ? 1 : -1))] != '#')
+                        {
+                            return false;
+                        }
+                    }
+                    break;
+                }
+                return false;
+
+            case 'q':
+                if (iy == fy)
+                {
+                    for (int i = 1; i < System.Math.Abs(ix - fx); i++)
+                    {
+                        if ((BoardScript.board[iy, ix + (i * ((ix - fx) < 0 ? 1 : -1))]) != '#')
+                        {
+                            return false;
+                        }
+                    }
+                    break;
+                }
+                if (ix == fx)
+                {
+                    for (int i = 1; i < System.Math.Abs(iy - fy); i++)
+                    {
+                        if ((BoardScript.board[iy + (i * ((iy - fy) < 0 ? 1 : -1)), ix]) != '#')
+                        {
+                            return false;
+                        }
+                    }
+                    break;
+                }
+                if ((System.Math.Abs(ix - fx) == System.Math.Abs(iy - fy)))
+                {
+                    for (int i = 1; i < System.Math.Abs(ix - fx); i++)
+                    {
+                        if (BoardScript.board[iy + (i * ((iy - fy) < 0 ? 1 : -1)), ix + (i * ((ix - fx) < 0 ? 1 : -1))] != '#')
+                        {
+                            return false;
+                        }
+                    }
+                    break;
+                }
+                return false;
+
+            case 'k':
+                if (System.Math.Abs(ix - fx) < 2 && System.Math.Abs(iy - fy) < 2)
+                {
+                    break;
+                }
+                return false;
+
+            default:
+                break;
+        }
+
+        return true;
+    }
+
     public static bool squareIsAttacked(int fy, int fx)
     {
         return false;
+    }
+
+    public static bool squareIsAttacked1(int fy, int fx)
+    {
+        //Check for attacked by black pieces
+        if (BoardScript.whiteTurn)
+        {
+            //Check for pawns
+            if (fy > 0)
+            {
+                if (fx < 7 && BoardScript.board[fy - 1, fx + 1] == 'p') return true;
+                if (fx > 0 && BoardScript.board[fy - 1, fx - 1] == 'p') return true;
+            }
+            //Check for pieces
+            BoardScript.whiteTurn = !BoardScript.whiteTurn;
+            foreach (Move move in BoardScript.blackMoves)
+            {
+                if (move.piece != 'p' && fx == move.fx && fy == move.fy)
+                {
+                    BoardScript.whiteTurn = !BoardScript.whiteTurn;
+                    return true;
+                }
+            }
+            BoardScript.whiteTurn = !BoardScript.whiteTurn;
+        }
+        //Check for attacked by white pieces
+        else
+        {
+            //Check for pawns
+            if (fy < 7)
+            {
+                if (fx < 7 && BoardScript.board[fy + 1, fx + 1] == 'P') return true;
+                if (fx > 0 && BoardScript.board[fy + 1, fx - 1] == 'P') return true;
+            }
+            //Check for pieces
+            BoardScript.whiteTurn = !BoardScript.whiteTurn;
+            foreach (Move move in BoardScript.whiteMoves)
+            {
+                if (move.piece != 'P' && fx == move.fx && fy == move.fy)
+                {
+                    BoardScript.whiteTurn = !BoardScript.whiteTurn;
+                    return true;
+                }
+            }
+            BoardScript.whiteTurn = !BoardScript.whiteTurn;
+        }
+        return false;
+    }
+
+    public static List<Move> generateLegalMoves(HashSet<(int row, int col)>  pieces)
+    {
+        List<Move> moves = new List<Move>();
+        HashSet<(int row, int col)> snapshot = new HashSet<(int, int)>(pieces);
+        foreach ((int row, int col) piece in snapshot)
+        {
+            for(int fx = 0; fx < 8; fx++)
+            {
+                for (int fy = 0; fy < 8; fy++)
+                {
+                    if(moveIsLegal(piece.row, piece.col, fy, fx))
+                    {
+                        Move move = new Move(piece.row, piece.col, fy, fx, BoardScript.board[piece.row, piece.col], BoardScript.board[fy, fx]);
+                        moves.Add(move);
+                    }
+                }
+            }
+        }
+        return moves;
+    }
+
+    public static List<Move> generatePsuedoLegalMoves(HashSet<(int row, int col)> pieces)
+    {
+        List<Move> moves = new List<Move>();
+        foreach ((int row, int col) piece in pieces)
+        {
+            
+            for (int fx = 0; fx < 8; fx++)
+            {
+                for (int fy = 0; fy < 8; fy++)
+                {
+                    if (moveIsPsuedoLegal(piece.row, piece.col, fy, fx))
+                    {
+                        Move move = new Move(piece.row, piece.col, fy, fx, BoardScript.board[piece.row, piece.col], BoardScript.board[fy, fx]);
+                        moves.Add(move);
+                    }
+                }
+            }
+        }
+        return moves;
+    }
+
+    public static void PrintMoves(List<Move> moves)
+    {
+        Debug.Log("All moves:");
+        foreach (Move move in moves)
+        {
+            string moveStr = $"({move.iy}, {move.ix}) -> ({move.fy}, {move.fx}) | Piece: {move.piece}, Capture: {move.capture}";
+            Debug.Log(moveStr);
+        }
     }
 
     void Update()
@@ -541,7 +862,6 @@ public class PieceScript : MonoBehaviour
             transform.position = mousePos;
         }
     }
-
 }
 
 public class Move
@@ -552,6 +872,8 @@ public class Move
     public int fx;
     public char piece;
     public char capture;
+    public bool longCastleRightsUpdate;
+    public bool shortCastleRightsUpdate;
 
     public Move(int iy, int ix, int fy, int fx, char piece, char capture)
     {

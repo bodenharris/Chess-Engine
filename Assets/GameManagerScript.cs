@@ -11,6 +11,7 @@ public class GameManagerScript : MonoBehaviour
     {
        BoardScript boardScript = FindObjectOfType<BoardScript>();
        boardScript.boardSetUp();
+       
     }
 
     private void Update()
