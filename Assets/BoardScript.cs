@@ -35,8 +35,8 @@ public class BoardScript : MonoBehaviour
     public static bool whiteTurn = true;
     public static bool gameOn = true;
     public static GameObject[,] UnityBoard = new GameObject[8, 8];
-    public static List<Move> whiteMoves;
-    public static List<Move> blackMoves;
+    public static List<Move> whitePsuedoLegalMoves;
+    public static List<Move> blackPsuedoLegalMoves;
 
     public static void PrintCharArray(char[,] array)
     {

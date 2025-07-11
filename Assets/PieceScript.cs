@@ -33,9 +33,12 @@ public class PieceScript : MonoBehaviour
             makeMove(move);
             BoardScript unityBoard = FindObjectOfType<BoardScript>();
             unityBoard.updateDisplayBoard();
+            BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
+            BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
+            PrintMoves(BoardScript.whitePsuedoLegalMoves);
+            PrintMoves(BoardScript.blackPsuedoLegalMoves);
             BoardScript.whiteTurn = !BoardScript.whiteTurn;
         }
-
     }
 
     public static bool moveIsPsuedoLegal(int iy, int ix, int fy, int fx)
@@ -750,11 +753,6 @@ public class PieceScript : MonoBehaviour
 
     public static bool squareIsAttacked(int fy, int fx)
     {
-        return false;
-    }
-
-    public static bool squareIsAttacked1(int fy, int fx)
-    {
         //Check for attacked by black pieces
         if (BoardScript.whiteTurn)
         {
@@ -765,16 +763,13 @@ public class PieceScript : MonoBehaviour
                 if (fx > 0 && BoardScript.board[fy - 1, fx - 1] == 'p') return true;
             }
             //Check for pieces
-            BoardScript.whiteTurn = !BoardScript.whiteTurn;
-            foreach (Move move in BoardScript.blackMoves)
+            foreach(Move move in BoardScript.blackPsuedoLegalMoves)
             {
-                if (move.piece != 'p' && fx == move.fx && fy == move.fy)
+                if(move.piece != 'p' && move.fx == fx && move.fy == fy)
                 {
-                    BoardScript.whiteTurn = !BoardScript.whiteTurn;
                     return true;
                 }
             }
-            BoardScript.whiteTurn = !BoardScript.whiteTurn;
         }
         //Check for attacked by white pieces
         else
@@ -785,17 +780,13 @@ public class PieceScript : MonoBehaviour
                 if (fx < 7 && BoardScript.board[fy + 1, fx + 1] == 'P') return true;
                 if (fx > 0 && BoardScript.board[fy + 1, fx - 1] == 'P') return true;
             }
-            //Check for pieces
-            BoardScript.whiteTurn = !BoardScript.whiteTurn;
-            foreach (Move move in BoardScript.whiteMoves)
+            foreach (Move move in BoardScript.whitePsuedoLegalMoves)
             {
-                if (move.piece != 'P' && fx == move.fx && fy == move.fy)
+                if (move.piece != 'P' && move.fx == fx && move.fy == fy)
                 {
-                    BoardScript.whiteTurn = !BoardScript.whiteTurn;
                     return true;
                 }
             }
-            BoardScript.whiteTurn = !BoardScript.whiteTurn;
         }
         return false;
     }
@@ -875,7 +866,7 @@ public class Move
     public bool longCastleRightsUpdate;
     public bool shortCastleRightsUpdate;
 
-    public Move(int iy, int ix, int fy, int fx, char piece, char capture)
+    public Move(int iy, int ix, int fy, int fx, char piece, char capture) 
     {
         this.iy = iy;
         this.ix = ix;
