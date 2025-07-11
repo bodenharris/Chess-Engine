@@ -29,7 +29,8 @@ public class PieceScript : MonoBehaviour
         else
         {
             transform.position = pos;
-            makeMove(iy, ix, fy, fx);
+            Move move = new Move(iy, ix, fy, fx, BoardScript.board[iy, ix], BoardScript.board[fy, fx]);
+            makeMove(move);
             BoardScript unityBoard = FindObjectOfType<BoardScript>();
             unityBoard.updateDisplayBoard();
             BoardScript.PrintCharArray(BoardScript.board);
@@ -213,8 +214,13 @@ public class PieceScript : MonoBehaviour
         return true;
     }
 
-    void makeMove(int iy, int ix, int fy, int fx)
+    void makeMove(Move move)
     {
+        int iy = move.iy;
+        int ix = move.ix;
+        int fy = move.fy;
+        int fx = move.fx;
+
         //Update Piece HashSets
         if (char.IsUpper(BoardScript.board[iy, ix]))
         {
@@ -436,12 +442,81 @@ public class PieceScript : MonoBehaviour
             BoardScript.board[fy, fx] = BoardScript.board[iy, ix];
             BoardScript.board[iy, ix] = '#';
         }
-        BoardScript.boardStack.Push(BoardScript.board);
     }
-
-    void undoMove(int iy, int ix, int fy, int fx)
+    void undoMove(Move move)
     {
+        int iy = move.iy;
+        int ix = move.ix;
+        int fy = move.fy;
+        int fx = move.fx;
+        char piece = move.piece;
+        char capture = move.capture;
 
+        //Check For Castle
+        if (char.ToLower(piece) == 'k' && System.Math.Abs(fx - fy) == 2)
+        {
+            if (piece == 'K')
+            {
+                //White Long Castle
+                if (fx == 2)
+                {
+                    BoardScript.board[7, 0] = 'R';
+                    BoardScript.board[7, 2] = '#';
+                    BoardScript.board[7, 3] = '#';
+                    BoardScript.board[7, 4] = 'K';
+                }
+                //White Short Castles
+                if (fx == 6)
+                {
+                    BoardScript.board[7, 4] = 'K';
+                    BoardScript.board[7, 5] = '#';
+                    BoardScript.board[7, 6] = '#';
+                    BoardScript.board[7, 7] = 'R';
+                }
+            }
+            else
+            {
+                //Black Long Castle
+                if (fx == 2)
+                {
+                    BoardScript.board[0, 0] = 'r';
+                    BoardScript.board[0, 2] = '#';
+                    BoardScript.board[0, 3] = '#';
+                    BoardScript.board[0, 4] = 'k';
+                }
+                //Black Short Castle
+                if (fx == 6)
+                {
+                    BoardScript.board[0, 4] = 'k';
+                    BoardScript.board[0, 5] = '#';
+                    BoardScript.board[0, 6] = '#';            
+                    BoardScript.board[0, 7] = 'r';    
+                }
+            }
+            return;
+        }
+
+        //Check En Pessant
+        if(char.ToLower(piece) == 'p' && System.Math.Abs(ix  - fx) == 1 && capture == '#')
+        {
+            if (piece == 'P')
+            {
+                BoardScript.board[ix, iy] = 'P';
+                BoardScript.board[fx, fy] = '#';
+                BoardScript.board[fx, fy + 1] = 'p';
+            }
+            else
+            {
+                BoardScript.board[ix, iy] = 'p';
+                BoardScript.board[fx, fy] = '#';
+                BoardScript.board[fx, fy - 1] = 'P';
+            }
+            return;
+        }
+
+        //Make Swap
+        BoardScript.board[ix, iy] = piece;
+        BoardScript.board[fx, fy] = capture;
     }
     void setFalse(bool[] myArray)
     {
@@ -467,4 +542,24 @@ public class PieceScript : MonoBehaviour
         }
     }
 
+}
+
+public class Move
+{
+    public int iy;
+    public int ix;
+    public int fy;
+    public int fx;
+    public char piece;
+    public char capture;
+
+    public Move(int iy, int ix, int fy, int fx, char piece, char capture)
+    {
+        this.iy = iy;
+        this.ix = ix;
+        this.fy = fy;
+        this.fx = fx;
+        this.piece = piece;
+        this.capture = capture;
+    }
 }

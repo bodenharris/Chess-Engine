@@ -134,7 +134,7 @@ public class BoardScript : MonoBehaviour
                 UnityBoard[i, j] = null;
             }
         }
-        DisplayBoard(boardStack.Peek());
+        DisplayBoard(board);
     }
     public void boardSetUp()
     {
@@ -181,12 +181,7 @@ public class BoardScript : MonoBehaviour
                 col += (startingPos[index] - '0');
             }
         }
-        boardStack.Push(board);
         DisplayBoard(board);
     }
 
-    private void Update()
-    {
-        
-    }
 }
