@@ -28,16 +28,60 @@ public class PieceScript : MonoBehaviour
         }
         else
         {
-            transform.position = pos;
             Move move = new Move(iy, ix, fy, fx, BoardScript.board[iy, ix], BoardScript.board[fy, fx]);
             makeMove(move);
-            BoardScript unityBoard = FindObjectOfType<BoardScript>();
-            unityBoard.updateDisplayBoard();
             BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
             BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
-            PrintMoves(BoardScript.whitePsuedoLegalMoves);
-            PrintMoves(BoardScript.blackPsuedoLegalMoves);
-            BoardScript.whiteTurn = !BoardScript.whiteTurn;
+            if (BoardScript.whiteTurn && squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
+            {
+                undoMove(move);
+                transform.position = new Vector3(ix, iy, transform.position.z);
+            }
+            else
+            {
+                transform.position = pos;
+                BoardScript unityBoard = FindObjectOfType<BoardScript>();
+                unityBoard.updateDisplayBoard();
+                BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
+                BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
+                BoardScript.whiteTurn = !BoardScript.whiteTurn;
+                if (BoardScript.whiteTurn)
+                {
+                    BoardScript.whiteLegalMoves = generateLegalMoves(BoardScript.whitePieces);
+                    Debug.Log("White moves: ");
+                    PrintMoves(BoardScript.whiteLegalMoves);
+                    if (BoardScript.whiteLegalMoves.Count == 0)
+                    {
+                        Debug.Log("Game Over");
+                        if (squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
+                        {
+                            Debug.Log("Black wins by checkmate!");
+                        }
+                        else
+                        {
+                            Debug.Log("Stalemate!");
+                        }
+                    }
+                }
+                else
+                {
+                    BoardScript.blackLegalMoves = generateLegalMoves(BoardScript.blackPieces);
+                    Debug.Log("Black moves: ");
+                    PrintMoves(BoardScript.blackLegalMoves);
+                    if(BoardScript.blackLegalMoves.Count == 0)
+                    {
+                        Debug.Log("Game Over");
+                        if (squareIsAttacked(BoardScript.blackKingPos.row, BoardScript.blackKingPos.col))
+                        {
+                            Debug.Log("White wins by checkmate!");
+                        }
+                        else
+                        {
+                            Debug.Log("Stalemate!");
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -153,7 +197,7 @@ public class PieceScript : MonoBehaviour
                 return false;
 
             case 'k':
-                if (System.Math.Abs(ix - fx) < 2 && System.Math.Abs(iy - fy) < 2)
+                if (System.Math.Abs(ix - fx) < 2 && System.Math.Abs(iy - fy) < 2 && !squareIsAttacked(fy, fx))
                 {
                     break;
                 }
@@ -223,7 +267,7 @@ public class PieceScript : MonoBehaviour
         {
             Move move = new Move(iy, ix, fy, fx, BoardScript.board[iy,  ix], BoardScript.board[fy, fx]);
             makeMove(move);
-            if (BoardScript.whiteTurn)
+            if (BoardScript.whiteTurn) 
             {
                 if (squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
                 {
@@ -822,7 +866,7 @@ public class PieceScript : MonoBehaviour
             {
                 for (int fy = 0; fy < 8; fy++)
                 {
-                    if (moveIsPsuedoLegal(piece.row, piece.col, fy, fx))
+                    if (moveIsPsuedoLegal2(piece.row, piece.col, fy, fx))
                     {
                         Move move = new Move(piece.row, piece.col, fy, fx, BoardScript.board[piece.row, piece.col], BoardScript.board[fy, fx]);
                         moves.Add(move);
@@ -841,6 +885,171 @@ public class PieceScript : MonoBehaviour
             string moveStr = $"({move.iy}, {move.ix}) -> ({move.fy}, {move.fx}) | Piece: {move.piece}, Capture: {move.capture}";
             Debug.Log(moveStr);
         }
+    }
+
+    public static bool moveIsPsuedoLegal2(int iy, int ix, int fy, int fx)
+    {
+        //Out of bounds
+        if (fx > 7 || fx < 0 || fy > 7 || fy < 0)
+        {
+            return false;
+        }
+
+        //Ensure Movement
+        if ((fx == ix) && (fy == iy))
+        {
+            return false;
+        }
+
+        //Determine Piece to ensure correct movement
+        switch (char.ToLower(BoardScript.board[iy, ix]))
+        {
+            case 'r':
+                if (iy == fy)
+                {
+                    for (int i = 1; i < System.Math.Abs(ix - fx); i++)
+                    {
+                        if ((BoardScript.board[iy, ix + (i * ((ix - fx) < 0 ? 1 : -1))]) != '#')
+                        {
+                            return false;
+                        }
+                    }
+                    break;
+                }
+                if (ix == fx)
+                {
+                    for (int i = 1; i < System.Math.Abs(iy - fy); i++)
+                    {
+                        if ((BoardScript.board[iy + (i * ((iy - fy) < 0 ? 1 : -1)), ix]) != '#')
+                        {
+                            return false;
+                        }
+                    }
+                    break;
+                }
+                return false;
+
+            case 'n':
+                if ((System.Math.Abs(ix - fx) == 1 && 2 == System.Math.Abs(iy - fy)) || (System.Math.Abs(ix - fx) == 2 && 1 == System.Math.Abs(iy - fy)))
+                {
+                    break;
+                }
+                return false;
+
+            case 'b':
+                if ((System.Math.Abs(ix - fx) == System.Math.Abs(iy - fy)))
+                {
+                    for (int i = 1; i < System.Math.Abs(ix - fx); i++)
+                    {
+                        if (BoardScript.board[iy + (i * ((iy - fy) < 0 ? 1 : -1)), ix + (i * ((ix - fx) < 0 ? 1 : -1))] != '#')
+                        {
+                            return false;
+                        }
+                    }
+                    break;
+                }
+                return false;
+
+            case 'q':
+                if (iy == fy)
+                {
+                    for (int i = 1; i < System.Math.Abs(ix - fx); i++)
+                    {
+                        if ((BoardScript.board[iy, ix + (i * ((ix - fx) < 0 ? 1 : -1))]) != '#')
+                        {
+                            return false;
+                        }
+                    }
+                    break;
+                }
+                if (ix == fx)
+                {
+                    for (int i = 1; i < System.Math.Abs(iy - fy); i++)
+                    {
+                        if ((BoardScript.board[iy + (i * ((iy - fy) < 0 ? 1 : -1)), ix]) != '#')
+                        {
+                            return false;
+                        }
+                    }
+                    break;
+                }
+                if ((System.Math.Abs(ix - fx) == System.Math.Abs(iy - fy)))
+                {
+                    for (int i = 1; i < System.Math.Abs(ix - fx); i++)
+                    {
+                        if (BoardScript.board[iy + (i * ((iy - fy) < 0 ? 1 : -1)), ix + (i * ((ix - fx) < 0 ? 1 : -1))] != '#')
+                        {
+                            return false;
+                        }
+                    }
+                    break;
+                }
+                return false;
+
+            case 'k':
+                if (System.Math.Abs(ix - fx) < 2 && System.Math.Abs(iy - fy) < 2)
+                {
+                    break;
+                }
+                //White Castles
+                else if (char.IsUpper(BoardScript.board[iy, ix]) && iy == 7 && fy == 7 && System.Math.Abs(ix - fx) == 2)
+                {
+                    if (BoardScript.whiteCanLongCastle && BoardScript.whiteCanCastle && fx == 2 && BoardScript.board[7, 3] == '#' && BoardScript.board[7, 2] == '#' && BoardScript.board[7, 1] == '#' && !squareIsAttacked(7, 3) && !squareIsAttacked(7, 2))
+                    {
+                        break;
+                    }
+                    if (BoardScript.whiteCanShortCastle && BoardScript.whiteCanCastle && fx == 6 && BoardScript.board[7, 5] == '#' && BoardScript.board[7, 6] == '#' && !squareIsAttacked(7, 5) && !squareIsAttacked(7, 4))
+                    {
+                        break;
+                    }
+                }
+                //Black Castles
+                else if (char.IsLower(BoardScript.board[iy, ix]) && iy == 0 && fy == 0 && System.Math.Abs(ix - fx) == 2 && !squareIsAttacked(0, 4))
+                {
+                    if (BoardScript.blackCanLongCastle && BoardScript.blackCanCastle && fx == 2 && BoardScript.board[0, 3] == '#' && BoardScript.board[0, 2] == '#' && BoardScript.board[0, 1] == '#' && !squareIsAttacked(0, 3) && !squareIsAttacked(0, 2))
+                    {
+                        break;
+                    }
+                    if (BoardScript.blackCanShortCastle && BoardScript.blackCanCastle && fx == 6 && BoardScript.board[0, 5] == '#' && BoardScript.board[0, 6] == '#' && !squareIsAttacked(0, 5) && !squareIsAttacked(0, 6))
+                    {
+                        break;
+                    }
+                }
+                return false;
+
+            case 'p':
+                //white pawn
+                if (char.IsUpper(BoardScript.board[iy, ix]))
+                {
+                    if ((ix == fx && BoardScript.board[iy - 1, ix] == '#' && (fy == iy - 1 || (fy == iy - 2 && iy == 6 && BoardScript.board[iy - 2, ix] == '#'))) || (System.Math.Abs(ix - fx) == 1 && fy == iy - 1 && char.IsLower(BoardScript.board[fy, fx])))
+                    {
+                        break;
+                    }
+                    //En Pessant
+                    if (BoardScript.blackPawnsEP[fx] && System.Math.Abs(ix - fx) == 1 && fy == 2 && iy == 3)
+                    {
+                        break;
+                    }
+                }
+                else //black pawn
+                {
+                    if ((ix == fx && BoardScript.board[iy + 1, ix] == '#' && (fy == iy + 1 || (fy == iy + 2 && iy == 1 && BoardScript.board[iy + 2, ix] == '#'))) || (System.Math.Abs(ix - fx) == 1 && fy == iy + 1 && char.IsUpper(BoardScript.board[fy, fx])))
+                    {
+                        break;
+                    }
+                    //En Pessant
+                    if (BoardScript.whitePawnsEP[fx] && System.Math.Abs(ix - fx) == 1 && fy == 5 && iy == 4)
+                    {
+                        break;
+                    }
+                }
+                return false;
+
+            default:
+                break;
+        }
+
+        return true;
     }
 
     void Update()

@@ -37,6 +37,8 @@ public class BoardScript : MonoBehaviour
     public static GameObject[,] UnityBoard = new GameObject[8, 8];
     public static List<Move> whitePsuedoLegalMoves;
     public static List<Move> blackPsuedoLegalMoves;
+    public static List<Move> whiteLegalMoves;
+    public static List<Move> blackLegalMoves;
 
     public static void PrintCharArray(char[,] array)
     {
@@ -186,6 +188,10 @@ public class BoardScript : MonoBehaviour
             }
         }
         DisplayBoard(board);
+        whitePsuedoLegalMoves = new List<Move>();
+        blackPsuedoLegalMoves = new List<Move>();
+        whiteLegalMoves = new List<Move>();
+        blackLegalMoves = new List<Move>();
     }
     public static void PrintPieceLocations(HashSet<(int row, int col)> pieces)
     {
