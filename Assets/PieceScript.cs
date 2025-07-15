@@ -22,7 +22,7 @@ public class PieceScript : MonoBehaviour
         pos.y = Mathf.Round(pos.y);
         int fx = Mathf.RoundToInt(pos.x);
         int fy = Mathf.RoundToInt(pos.y);
-        if (!moveIsPsuedoLegal(iy, ix, fy, fx))
+        if (!moveIsLegal(iy, ix, fy, fx))
         {
             transform.position = new Vector3(ix, iy, transform.position.z);
         }
@@ -34,6 +34,7 @@ public class PieceScript : MonoBehaviour
             BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
             if (BoardScript.whiteTurn && squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
             {
+
                 undoMove(move);
                 transform.position = new Vector3(ix, iy, transform.position.z);
             }
