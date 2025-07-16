@@ -869,23 +869,85 @@ public class PieceScript : MonoBehaviour
     public static Move engineMove(int depth)
     {
         Move bestMove = new Move(0, 0, 0, 0, '#', '#');
+        List<Move> candidateMoves = new List<Move>();
         foreach(Move move in BoardScript.blackPsuedoLegalMoves)
         {
             if (moveIsLegal(move))
             {
-                return move;
+                makeMove(move);
+                move.eval = evalPos();
+                undoMove(move);
+                candidateMoves.Add(move);
             }
         }
-        return bestMove;
+        return min(candidateMoves);
     }
 
-    public int evalPos()
+    public static int evalPos()
     {
+        int total = 0;
+        //Add White Piece Scores
         foreach((int row, int col) in BoardScript.whitePieces)
         {
-            return 1;
+            switch (BoardScript.board[row, col]) 
+            {
+                case 'P':
+                    total += 100;
+                    break;
+                case 'N':
+                    total += 300;
+                    break;
+                case 'B':
+                    total += 300;
+                    break;
+                case 'R':
+                    total += 500;
+                    break;
+                case 'Q':
+                    total += 900;
+                    break;
+                default:
+                    break;
+            }
         }
-        return 0;
+        //Add Black Piece Scores
+        foreach ((int row, int col) in BoardScript.blackPieces)
+        {
+            switch (BoardScript.board[row, col])
+            {
+                case 'p':
+                    total -= 100;
+                    break;
+                case 'n':
+                    total -= 300;
+                    break;
+                case 'b':
+                    total -= 300;
+                    break;
+                case 'r':
+                    total -= 500;
+                    break;
+                case 'q':
+                    total -= 900;
+                    break;
+                default:
+                    break;
+            }
+        }
+        return total;
+    }
+
+    public static Move min(List<Move> list)
+    {
+        Move min = list[0];
+        foreach(Move move in list)
+        {
+            if (move.eval < min.eval)
+            {
+                min = move;
+            }
+        }
+        return min;
     }
 
     void Update()
@@ -910,6 +972,7 @@ public class Move
     public char capture;
     public bool longCastleRightsUpdate;
     public bool shortCastleRightsUpdate;
+    public int eval;
 
     public Move(int iy, int ix, int fy, int fx, char piece, char capture) 
     {
@@ -919,5 +982,6 @@ public class Move
         this.fx = fx;
         this.piece = piece;
         this.capture = capture;
+        this.eval = 0;
     }
 }
