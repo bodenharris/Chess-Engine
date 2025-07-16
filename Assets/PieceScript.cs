@@ -39,6 +39,7 @@ public class PieceScript : MonoBehaviour
             makeMove(engineMove(1));
             unityBoard.updateDisplayBoard();
             BoardScript.whiteTurn = !BoardScript.whiteTurn;
+            Debug.Log(evalPos());
         }
     }
 
@@ -56,14 +57,8 @@ public class PieceScript : MonoBehaviour
             return false;
         }
 
-        //Check Turn
-        if (char.IsUpper(BoardScript.board[iy, ix]) == !BoardScript.whiteTurn)
-        {
-            return false;
-        }
-
         //Space isnt covered already by own piece
-        if (BoardScript.board[fy, fx] != '#' && (BoardScript.whiteTurn == char.IsUpper(BoardScript.board[fy, fx])))
+        if (BoardScript.board[fy, fx] != '#' && (char.IsUpper(BoardScript.board[iy, ix]) == char.IsUpper(BoardScript.board[fy, fx])))
         {
             return false;
         }
@@ -230,7 +225,7 @@ public class PieceScript : MonoBehaviour
             makeMove(move);
             BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
             BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
-            if (BoardScript.whiteTurn) 
+            if (char.IsUpper(move.piece)) 
             {
                 if (squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
                 {
@@ -466,7 +461,6 @@ public class PieceScript : MonoBehaviour
         //En Pessant
         else if (char.ToLower(BoardScript.board[iy, ix]) == 'p' && (ix != fx) && BoardScript.board[fy, fx] == '#')
         {
-            Debug.Log("here");
             if (BoardScript.whiteTurn)
             {
                 BoardScript.board[fy, fx] = BoardScript.board[iy, ix];
@@ -694,7 +688,6 @@ public class PieceScript : MonoBehaviour
             Debug.Log(moveStr);
         }
     }
-
     public static bool moveIsPsuedoLegal2(int iy, int ix, int fy, int fx)
     {
         //Out of bounds
@@ -865,24 +858,55 @@ public class PieceScript : MonoBehaviour
 
         return true;
     }
-
     public static Move engineMove(int depth)
     {
-        Move bestMove = new Move(0, 0, 0, 0, '#', '#');
         List<Move> candidateMoves = new List<Move>();
-        foreach(Move move in BoardScript.blackPsuedoLegalMoves)
+        if (depth % 2 == 1)
         {
-            if (moveIsLegal(move))
+            BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
+            foreach (Move move in BoardScript.blackPsuedoLegalMoves)
             {
-                makeMove(move);
-                move.eval = evalPos();
-                undoMove(move);
-                candidateMoves.Add(move);
+                if (moveIsLegalAndMake(move))
+                {
+                    if (depth == 0)
+                    {
+                        move.eval = evalPos();
+                    }
+                    else
+                    {
+                        move.eval = engineMove(depth - 1).eval;
+                    }
+                    undoMove(move);
+                    candidateMoves.Add(move);
+                }
             }
+            return min(candidateMoves);
         }
-        return min(candidateMoves);
+        else
+        {
+            BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
+            foreach (Move move in BoardScript.whitePsuedoLegalMoves)
+            {
+                if (moveIsLegalAndMake(move))
+                {
+                    string moveStr = $"({move.iy}, {move.ix}) -> ({move.fy}, {move.fx}) | Piece: {move.piece}, Capture: {move.capture}";
+                    Debug.Log(moveStr);
+                    if (depth == 0)
+                    {
+                        move.eval = evalPos();
+                    }
+                    else
+                    {
+                        move.eval = engineMove(depth - 1).eval;
+                    }
+                    undoMove(move);
+                    candidateMoves.Add(move);
+                }
+            }
+            return max(candidateMoves);
+        }
+        
     }
-
     public static int evalPos()
     {
         int total = 0;
@@ -936,7 +960,39 @@ public class PieceScript : MonoBehaviour
         }
         return total;
     }
+    public static bool moveIsLegalAndMake(Move move)
+    {
+        int iy = move.iy;
+        int ix = move.ix;
+        int fy = move.fy;
+        int fx = move.fx;
 
+        if (moveIsPsuedoLegal(iy, ix, fy, fx))
+        {
+            makeMove(move);
+            BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
+            BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
+            if (char.IsUpper(move.piece))
+            {
+                if (squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
+                {
+                    undoMove(move);
+                    return false;
+                }
+                return true;
+            }
+            else
+            {
+                if (squareIsAttacked(BoardScript.blackKingPos.row, BoardScript.blackKingPos.col))
+                {
+                    undoMove(move);
+                    return false;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
     public static Move min(List<Move> list)
     {
         Move min = list[0];
@@ -948,6 +1004,18 @@ public class PieceScript : MonoBehaviour
             }
         }
         return min;
+    }
+    public static Move max(List<Move> list)
+    {
+        Move max = list[0];
+        foreach (Move move in list)
+        {
+            if (move.eval > max.eval)
+            {
+                max = move;
+            }
+        }
+        return max;
     }
 
     void Update()
