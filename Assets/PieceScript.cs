@@ -30,59 +30,10 @@ public class PieceScript : MonoBehaviour
         {
             Move move = new Move(iy, ix, fy, fx, BoardScript.board[iy, ix], BoardScript.board[fy, fx]);
             makeMove(move);
-            BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
-            BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
-            if (BoardScript.whiteTurn && squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
-            {
-
-                undoMove(move);
-                transform.position = new Vector3(ix, iy, transform.position.z);
-            }
-            else
-            {
-                transform.position = pos;
-                BoardScript unityBoard = FindObjectOfType<BoardScript>();
-                unityBoard.updateDisplayBoard();
-                BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
-                BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
-                BoardScript.whiteTurn = !BoardScript.whiteTurn;
-                if (BoardScript.whiteTurn)
-                {
-                    BoardScript.whiteLegalMoves = generateLegalMoves(BoardScript.whitePieces);
-                    Debug.Log("White moves: ");
-                    PrintMoves(BoardScript.whiteLegalMoves);
-                    if (BoardScript.whiteLegalMoves.Count == 0)
-                    {
-                        Debug.Log("Game Over");
-                        if (squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
-                        {
-                            Debug.Log("Black wins by checkmate!");
-                        }
-                        else
-                        {
-                            Debug.Log("Stalemate!");
-                        }
-                    }
-                }
-                else
-                {
-                    BoardScript.blackLegalMoves = generateLegalMoves(BoardScript.blackPieces);
-                    Debug.Log("Black moves: ");
-                    PrintMoves(BoardScript.blackLegalMoves);
-                    if(BoardScript.blackLegalMoves.Count == 0)
-                    {
-                        Debug.Log("Game Over");
-                        if (squareIsAttacked(BoardScript.blackKingPos.row, BoardScript.blackKingPos.col))
-                        {
-                            Debug.Log("White wins by checkmate!");
-                        }
-                        else
-                        {
-                            Debug.Log("Stalemate!");
-                        }
-                    }
-                }
-            }
+            transform.position = pos;
+            BoardScript unityBoard = FindObjectOfType<BoardScript>();
+            unityBoard.updateDisplayBoard();
+            BoardScript.whiteTurn = !BoardScript.whiteTurn;
         }
     }
 
@@ -198,7 +149,7 @@ public class PieceScript : MonoBehaviour
                 return false;
 
             case 'k':
-                if (System.Math.Abs(ix - fx) < 2 && System.Math.Abs(iy - fy) < 2 && !squareIsAttacked(fy, fx))
+                if (System.Math.Abs(ix - fx) < 2 && System.Math.Abs(iy - fy) < 2)
                 {
                     break;
                 }
@@ -263,23 +214,32 @@ public class PieceScript : MonoBehaviour
         return true;
     }
     public static bool moveIsLegal(int iy, int ix, int fy, int fx)
-    { 
+    {
         if(moveIsPsuedoLegal(iy, ix, fy, fx))
         {
+            Debug.Log("hi");
             Move move = new Move(iy, ix, fy, fx, BoardScript.board[iy,  ix], BoardScript.board[fy, fx]);
             makeMove(move);
+            BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
+            BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
+            PrintMoves(BoardScript.blackPsuedoLegalMoves);
             if (BoardScript.whiteTurn) 
             {
+                Debug.Log("here;");
+                Debug.Log("king pos: " + BoardScript.whiteKingPos);
+                Debug.Log("is attacked: " + squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col));
                 if (squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
                 {
                     undoMove(move);
                     return false;
                 }
+                Debug.Log("Move is legal, return true");
                 undoMove(move);
                 return true;
             }
             else
             {
+                Debug.Log("here now");
                 if (squareIsAttacked(BoardScript.blackKingPos.row, BoardScript.blackKingPos.col))
                 {
                     undoMove(move);
@@ -666,151 +626,15 @@ public class PieceScript : MonoBehaviour
         }
     }
 
-    public static bool squareIsAttackedHelper(Move  move)
-    {
-        int iy = move.iy;
-        int ix = move.ix;
-        int fy = move.fy;
-        int fx = move.fx;
-
-        //Out of bounds
-        if (fx > 7 || fx < 0 || fy > 7 || fy < 0)
-        {
-            return false;
-        }
-
-        //Ensure Movement
-        if ((fx == ix) && (fy == iy))
-        {
-            return false;
-        }
-
-        //Check Turn
-        if (char.IsUpper(BoardScript.board[iy, ix]) == !BoardScript.whiteTurn)
-        {
-            return false;
-        }
-
-        //Space isnt covered already by own piece
-        if (BoardScript.board[fy, fx] != '#' && (BoardScript.whiteTurn == char.IsUpper(BoardScript.board[fy, fx])))
-        {
-            return false;
-        }
-
-        //Determine Piece to ensure correct movement
-        switch (char.ToLower(BoardScript.board[iy, ix]))
-        {
-            case 'r':
-                if (iy == fy)
-                {
-                    for (int i = 1; i < System.Math.Abs(ix - fx); i++)
-                    {
-                        if ((BoardScript.board[iy, ix + (i * ((ix - fx) < 0 ? 1 : -1))]) != '#')
-                        {
-                            return false;
-                        }
-                    }
-                    break;
-                }
-                if (ix == fx)
-                {
-                    for (int i = 1; i < System.Math.Abs(iy - fy); i++)
-                    {
-                        if ((BoardScript.board[iy + (i * ((iy - fy) < 0 ? 1 : -1)), ix]) != '#')
-                        {
-                            return false;
-                        }
-                    }
-                    break;
-                }
-                return false;
-
-            case 'n':
-                if ((System.Math.Abs(ix - fx) == 1 && 2 == System.Math.Abs(iy - fy)) || (System.Math.Abs(ix - fx) == 2 && 1 == System.Math.Abs(iy - fy)))
-                {
-                    break;
-                }
-                return false;
-
-            case 'b':
-                if ((System.Math.Abs(ix - fx) == System.Math.Abs(iy - fy)))
-                {
-                    for (int i = 1; i < System.Math.Abs(ix - fx); i++)
-                    {
-                        if (BoardScript.board[iy + (i * ((iy - fy) < 0 ? 1 : -1)), ix + (i * ((ix - fx) < 0 ? 1 : -1))] != '#')
-                        {
-                            return false;
-                        }
-                    }
-                    break;
-                }
-                return false;
-
-            case 'q':
-                if (iy == fy)
-                {
-                    for (int i = 1; i < System.Math.Abs(ix - fx); i++)
-                    {
-                        if ((BoardScript.board[iy, ix + (i * ((ix - fx) < 0 ? 1 : -1))]) != '#')
-                        {
-                            return false;
-                        }
-                    }
-                    break;
-                }
-                if (ix == fx)
-                {
-                    for (int i = 1; i < System.Math.Abs(iy - fy); i++)
-                    {
-                        if ((BoardScript.board[iy + (i * ((iy - fy) < 0 ? 1 : -1)), ix]) != '#')
-                        {
-                            return false;
-                        }
-                    }
-                    break;
-                }
-                if ((System.Math.Abs(ix - fx) == System.Math.Abs(iy - fy)))
-                {
-                    for (int i = 1; i < System.Math.Abs(ix - fx); i++)
-                    {
-                        if (BoardScript.board[iy + (i * ((iy - fy) < 0 ? 1 : -1)), ix + (i * ((ix - fx) < 0 ? 1 : -1))] != '#')
-                        {
-                            return false;
-                        }
-                    }
-                    break;
-                }
-                return false;
-
-            case 'k':
-                if (System.Math.Abs(ix - fx) < 2 && System.Math.Abs(iy - fy) < 2)
-                {
-                    break;
-                }
-                return false;
-
-            default:
-                break;
-        }
-
-        return true;
-    }
-
     public static bool squareIsAttacked(int fy, int fx)
     {
         //Check for attacked by black pieces
         if (BoardScript.whiteTurn)
         {
-            //Check for pawns
-            if (fy > 0)
-            {
-                if (fx < 7 && BoardScript.board[fy - 1, fx + 1] == 'p') return true;
-                if (fx > 0 && BoardScript.board[fy - 1, fx - 1] == 'p') return true;
-            }
             //Check for pieces
             foreach(Move move in BoardScript.blackPsuedoLegalMoves)
             {
-                if(move.piece != 'p' && move.fx == fx && move.fy == fy)
+                if(move.capture == 'K')
                 {
                     return true;
                 }
@@ -819,15 +643,9 @@ public class PieceScript : MonoBehaviour
         //Check for attacked by white pieces
         else
         {
-            //Check for pawns
-            if (fy < 7)
-            {
-                if (fx < 7 && BoardScript.board[fy + 1, fx + 1] == 'P') return true;
-                if (fx > 0 && BoardScript.board[fy + 1, fx - 1] == 'P') return true;
-            }
             foreach (Move move in BoardScript.whitePsuedoLegalMoves)
             {
-                if (move.piece != 'P' && move.fx == fx && move.fy == fy)
+                if (move.capture == 'k')
                 {
                     return true;
                 }
@@ -898,6 +716,12 @@ public class PieceScript : MonoBehaviour
 
         //Ensure Movement
         if ((fx == ix) && (fy == iy))
+        {
+            return false;
+        }
+
+        //Space isnt covered already by own piece
+        if (BoardScript.board[fy, fx] != '#' && (char.IsUpper(BoardScript.board[iy, ix]) == char.IsUpper(BoardScript.board[fy, fx])))
         {
             return false;
         }
