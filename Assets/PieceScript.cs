@@ -22,16 +22,21 @@ public class PieceScript : MonoBehaviour
         pos.y = Mathf.Round(pos.y);
         int fx = Mathf.RoundToInt(pos.x);
         int fy = Mathf.RoundToInt(pos.y);
-        if (!moveIsLegal(iy, ix, fy, fx))
+        Move move = new Move(iy, ix, fy, fx, BoardScript.board[iy, ix], BoardScript.board[fy, fx]);
+        if (!moveIsLegal(move))
         {
             transform.position = new Vector3(ix, iy, transform.position.z);
         }
         else
         {
-            Move move = new Move(iy, ix, fy, fx, BoardScript.board[iy, ix], BoardScript.board[fy, fx]);
             makeMove(move);
             transform.position = pos;
             BoardScript unityBoard = FindObjectOfType<BoardScript>();
+            unityBoard.updateDisplayBoard();
+            BoardScript.whiteTurn = !BoardScript.whiteTurn;
+            BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
+            BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
+            makeMove(engineMove(1));
             unityBoard.updateDisplayBoard();
             BoardScript.whiteTurn = !BoardScript.whiteTurn;
         }
@@ -213,33 +218,30 @@ public class PieceScript : MonoBehaviour
 
         return true;
     }
-    public static bool moveIsLegal(int iy, int ix, int fy, int fx)
+    public static bool moveIsLegal(Move move)
     {
-        if(moveIsPsuedoLegal(iy, ix, fy, fx))
+        int iy = move.iy;
+        int ix = move.ix;
+        int fy = move.fy;
+        int fx = move.fx;
+
+        if (moveIsPsuedoLegal(iy, ix, fy, fx))
         {
-            Debug.Log("hi");
-            Move move = new Move(iy, ix, fy, fx, BoardScript.board[iy,  ix], BoardScript.board[fy, fx]);
             makeMove(move);
             BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
             BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
-            PrintMoves(BoardScript.blackPsuedoLegalMoves);
             if (BoardScript.whiteTurn) 
             {
-                Debug.Log("here;");
-                Debug.Log("king pos: " + BoardScript.whiteKingPos);
-                Debug.Log("is attacked: " + squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col));
                 if (squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
                 {
                     undoMove(move);
                     return false;
                 }
-                Debug.Log("Move is legal, return true");
                 undoMove(move);
                 return true;
             }
             else
             {
-                Debug.Log("here now");
                 if (squareIsAttacked(BoardScript.blackKingPos.row, BoardScript.blackKingPos.col))
                 {
                     undoMove(move);
@@ -617,6 +619,14 @@ public class PieceScript : MonoBehaviour
             BoardScript.blackPieces.Remove((fy, fx));
             BoardScript.blackPieces.Add((iy, ix));
         }
+        if(char.IsUpper(capture))
+        {
+            BoardScript.whitePieces.Add((fy, fx));
+        }
+        else if (char.IsLower(capture))
+        {
+            BoardScript.blackPieces.Add((fy, fx));
+        }
     }
     static void setFalse(bool[] myArray)
     {
@@ -652,27 +662,6 @@ public class PieceScript : MonoBehaviour
             }
         }
         return false;
-    }
-
-    public static List<Move> generateLegalMoves(HashSet<(int row, int col)>  pieces)
-    {
-        List<Move> moves = new List<Move>();
-        HashSet<(int row, int col)> snapshot = new HashSet<(int, int)>(pieces);
-        foreach ((int row, int col) piece in snapshot)
-        {
-            for(int fx = 0; fx < 8; fx++)
-            {
-                for (int fy = 0; fy < 8; fy++)
-                {
-                    if(moveIsLegal(piece.row, piece.col, fy, fx))
-                    {
-                        Move move = new Move(piece.row, piece.col, fy, fx, BoardScript.board[piece.row, piece.col], BoardScript.board[fy, fx]);
-                        moves.Add(move);
-                    }
-                }
-            }
-        }
-        return moves;
     }
 
     public static List<Move> generatePsuedoLegalMoves(HashSet<(int row, int col)> pieces)
@@ -875,6 +864,28 @@ public class PieceScript : MonoBehaviour
         }
 
         return true;
+    }
+
+    public static Move engineMove(int depth)
+    {
+        Move bestMove = new Move(0, 0, 0, 0, '#', '#');
+        foreach(Move move in BoardScript.blackPsuedoLegalMoves)
+        {
+            if (moveIsLegal(move))
+            {
+                return move;
+            }
+        }
+        return bestMove;
+    }
+
+    public int evalPos()
+    {
+        foreach((int row, int col) in BoardScript.whitePieces)
+        {
+            return 1;
+        }
+        return 0;
     }
 
     void Update()
