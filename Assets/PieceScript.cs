@@ -916,13 +916,13 @@ public class PieceScript : MonoBehaviour
             switch (BoardScript.board[row, col]) 
             {
                 case 'P':
-                    total += 100;
+                    total += 100 + BoardScript.whitePawnBonus[row, col];
                     break;
                 case 'N':
                     total += 300 + BoardScript.knightBonus[row, col];
                     break;
                 case 'B':
-                    total += 300;
+                    total += 300 + BoardScript.bishopBonus[row, col];
                     break;
                 case 'R':
                     total += 500;
@@ -943,13 +943,13 @@ public class PieceScript : MonoBehaviour
             switch (BoardScript.board[row, col])
             {
                 case 'p':
-                    total += -100;
+                    total += (-100 - BoardScript.blackPawnBonus[row, col]);
                     break;
                 case 'n':
                     total += (-300 - BoardScript.knightBonus[row, col]);
                     break;
                 case 'b':
-                    total += -300;
+                    total += (-300 - BoardScript.bishopBonus[row, col]);
                     break;
                 case 'r':
                     total += -500;
