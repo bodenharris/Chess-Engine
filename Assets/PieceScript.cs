@@ -36,13 +36,13 @@ public class PieceScript : MonoBehaviour
             BoardScript.whiteTurn = !BoardScript.whiteTurn;
             BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
             BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
-            makeMove(engineMove(1));
+            engineMove(4, false, -100000, 100000);
+            makeMove(BoardScript.bestMove);
             unityBoard.updateDisplayBoard();
             BoardScript.whiteTurn = !BoardScript.whiteTurn;
             Debug.Log(evalPos());
         }
     }
-
     public static bool moveIsPsuedoLegal(int iy, int ix, int fy, int fx)
     {
         //Out of bounds
@@ -629,7 +629,6 @@ public class PieceScript : MonoBehaviour
             myArray[i] = false;
         }
     }
-
     public static bool squareIsAttacked(int fy, int fx)
     {
         //Check for attacked by black pieces
@@ -657,7 +656,6 @@ public class PieceScript : MonoBehaviour
         }
         return false;
     }
-
     public static List<Move> generatePsuedoLegalMoves(HashSet<(int row, int col)> pieces)
     {
         List<Move> moves = new List<Move>();
@@ -678,7 +676,6 @@ public class PieceScript : MonoBehaviour
         }
         return moves;
     }
-
     public static void PrintMoves(List<Move> moves)
     {
         Debug.Log("All moves:");
@@ -858,54 +855,67 @@ public class PieceScript : MonoBehaviour
 
         return true;
     }
-    public static Move engineMove(int depth)
+    public static int engineMove(int depth, bool maximizingPlayer, int alpha, int beta)
     {
-        List<Move> candidateMoves = new List<Move>();
-        if (depth % 2 == 1)
+        int eval;
+        if (depth == 0) 
         {
-            BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
-            foreach (Move move in BoardScript.blackPsuedoLegalMoves)
-            {
-                if (moveIsLegalAndMake(move))
-                {
-                    if (depth == 0)
-                    {
-                        move.eval = evalPos();
-                    }
-                    else
-                    {
-                        move.eval = engineMove(depth - 1).eval;
-                    }
-                    undoMove(move);
-                    candidateMoves.Add(move);
-                }
-            }
-            return min(candidateMoves);
+            return evalPos();
         }
-        else
+        if(maximizingPlayer)
         {
+            int maxEval = -100000;
             BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
             foreach (Move move in BoardScript.whitePsuedoLegalMoves)
             {
                 if (moveIsLegalAndMake(move))
                 {
-                    string moveStr = $"({move.iy}, {move.ix}) -> ({move.fy}, {move.fx}) | Piece: {move.piece}, Capture: {move.capture}";
-                    Debug.Log(moveStr);
-                    if (depth == 0)
-                    {
-                        move.eval = evalPos();
-                    }
-                    else
-                    {
-                        move.eval = engineMove(depth - 1).eval;
-                    }
+                    eval = engineMove(depth - 1, false, alpha, beta);
                     undoMove(move);
-                    candidateMoves.Add(move);
+                    if (eval > maxEval)
+                    {
+                        maxEval = eval;
+                        if (depth == 4)
+                        {
+                            BoardScript.bestMove = move;
+                        }
+                    }
+                    alpha = System.Math.Max(alpha, eval);
+                    if (beta <= alpha)
+                    {
+                        break;
+                    }    
                 }
             }
-            return max(candidateMoves);
+            return maxEval;
         }
-        
+        else
+        {
+            int minEval = 100000;
+            BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
+            foreach(Move move in BoardScript.blackPsuedoLegalMoves)
+            {
+                if (moveIsLegalAndMake(move))
+                {
+                    eval = engineMove(depth - 1, true, alpha, beta);
+                    undoMove(move);
+                    if(eval < minEval)
+                    {
+                        minEval = eval;
+                        if(depth == 4)
+                        {
+                            BoardScript.bestMove = move;
+                        }    
+                    }
+                    beta = System.Math.Min(beta, eval);
+                    if (beta <= alpha)
+                    {
+                        break;
+                    }
+                }
+            }
+            return minEval;
+        }
     }
     public static int evalPos()
     {

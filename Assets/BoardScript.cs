@@ -19,6 +19,7 @@ public class BoardScript : MonoBehaviour
     public Sprite whiteKingSprite;
     public Sprite whitePawnSprite;
     public static string startingPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    //public static string startingPos = "4k2r/pppp4/8/8/8/8/4PPPP/4K2R";
     public static HashSet<(int row, int col)> whitePieces = new HashSet<(int, int)>();
     public static HashSet<(int row, int col)> blackPieces = new HashSet<(int, int)>();
     public static bool[] whitePawnsEP = { false, false, false, false, false, false, false, false };
@@ -94,6 +95,7 @@ public class BoardScript : MonoBehaviour
     { 0, 20, 10, 10, 10, 10, 20, 0 },
     { 10, 0, 0, -10, -10, 0, 0, 10 }
 };
+    public static Move bestMove;
 
     public static void PrintCharArray(char[,] array)
     {
@@ -247,6 +249,7 @@ public class BoardScript : MonoBehaviour
         blackPsuedoLegalMoves = new List<Move>();
         whiteLegalMoves = new List<Move>();
         blackLegalMoves = new List<Move>();
+        bestMove = new Move(0, 0, 0, 0, '#', '#');
     }
     public static void PrintPieceLocations(HashSet<(int row, int col)> pieces)
     {
