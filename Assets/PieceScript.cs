@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Diagnostics;
 
 public class PieceScript : MonoBehaviour
 {
@@ -36,11 +37,15 @@ public class PieceScript : MonoBehaviour
             BoardScript.whiteTurn = !BoardScript.whiteTurn;
             BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
             BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
             engineMove(4, false, -100000, 100000);
+            stopwatch.Stop();
+            UnityEngine.Debug.Log("Engine move took: " + stopwatch.ElapsedMilliseconds + " ms");
             makeMove(BoardScript.bestMove);
             unityBoard.updateDisplayBoard();
             BoardScript.whiteTurn = !BoardScript.whiteTurn;
-            Debug.Log(evalPos());
+            UnityEngine.Debug.Log(evalPos());
         }
     }
     public static bool moveIsPsuedoLegal(int iy, int ix, int fy, int fx)
@@ -678,11 +683,11 @@ public class PieceScript : MonoBehaviour
     }
     public static void PrintMoves(List<Move> moves)
     {
-        Debug.Log("All moves:");
+        UnityEngine.Debug.Log("All moves:");
         foreach (Move move in moves)
         {
             string moveStr = $"({move.iy}, {move.ix}) -> ({move.fy}, {move.fx}) | Piece: {move.piece}, Capture: {move.capture}";
-            Debug.Log(moveStr);
+            UnityEngine.Debug.Log(moveStr);
         }
     }
     public static bool moveIsPsuedoLegal2(int iy, int ix, int fy, int fx)
@@ -865,7 +870,8 @@ public class PieceScript : MonoBehaviour
         if(maximizingPlayer)
         {
             int maxEval = -100000;
-            BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
+            BoardScript.whitePsuedoLegalMoves = orderMoves(generatePsuedoLegalMoves(BoardScript.whitePieces));
+            //BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
             foreach (Move move in BoardScript.whitePsuedoLegalMoves)
             {
                 if (moveIsLegalAndMake(move))
@@ -892,8 +898,9 @@ public class PieceScript : MonoBehaviour
         else
         {
             int minEval = 100000;
-            BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
-            foreach(Move move in BoardScript.blackPsuedoLegalMoves)
+            BoardScript.blackPsuedoLegalMoves = orderMoves(generatePsuedoLegalMoves(BoardScript.blackPieces));
+            //BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
+            foreach (Move move in BoardScript.blackPsuedoLegalMoves)
             {
                 if (moveIsLegalAndMake(move))
                 {
@@ -1010,29 +1017,23 @@ public class PieceScript : MonoBehaviour
         }
         return false;
     }
-    public static Move min(List<Move> list)
+    public static List<Move> orderMoves(List<Move> moves)
     {
-        Move min = list[0];
-        foreach(Move move in list)
+        int index = 0;
+        List<Move> orderedMoves = new List<Move>();
+        //Captures first
+        foreach(Move move in moves)
         {
-            if (move.eval < min.eval)
+            if(char.ToLower(move.capture) != '#')
             {
-                min = move;
+                orderedMoves.Insert(0, move);
+            }
+            else
+            {
+                orderedMoves.Add(move);
             }
         }
-        return min;
-    }
-    public static Move max(List<Move> list)
-    {
-        Move max = list[0];
-        foreach (Move move in list)
-        {
-            if (move.eval > max.eval)
-            {
-                max = move;
-            }
-        }
-        return max;
+        return orderedMoves;
     }
 
     void Update()
