@@ -39,6 +39,28 @@ public class BoardScript : MonoBehaviour
     public static List<Move> blackPsuedoLegalMoves;
     public static List<Move> whiteLegalMoves;
     public static List<Move> blackLegalMoves;
+    public static int[,] knightBonus = new int[8, 8]
+{
+    { -50, -30, -30, -30, -30, -30, -30, -50 },
+    { -30, 0, 0, 0, 0, 0, 0, -30 },
+    { -30, 0, 10, 10, 10, 10, 0, -30 },
+    {-30, 0, 10, 30, 30, 10, 0, -30 },
+    {-30, 0, 10, 30, 30, 10, 0, -30 },
+    { -30, 0, 10, 10, 10, 10, 0, -30 },
+    { -30, 0, 0, 0, 0, 0, 0, -30 },
+    { -50, -30, -30, -30, -30, -30, -30, -50 },
+};
+    public static int[,] kingEarlyBonus = new int[8, 8]
+{
+    { 50, 45, 5, 0, 0, 5, 45, 50 },
+    { 30, 10, -10, -10, -10, -10, 10, 30 },
+    { -10, -10, -20, -20, -20, -20, -10, -10 },
+    { -40, -50, -50, -50, -50, -50, -50, -40 },
+    { -40, -50, -50, -50, -50, -50, -50, -40 },
+    { -10, -10, -20, -20, -20, -20, -10, -10 },
+    { 30, 10, -10, -10, -10, -10, 10, 30 },
+    { 50, 45, 5, 0, 0, 5, 45, 50 }
+};
 
     public static void PrintCharArray(char[,] array)
     {

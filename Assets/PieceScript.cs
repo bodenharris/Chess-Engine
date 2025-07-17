@@ -919,7 +919,7 @@ public class PieceScript : MonoBehaviour
                     total += 100;
                     break;
                 case 'N':
-                    total += 300;
+                    total += 300 + BoardScript.knightBonus[row, col];
                     break;
                 case 'B':
                     total += 300;
@@ -929,6 +929,9 @@ public class PieceScript : MonoBehaviour
                     break;
                 case 'Q':
                     total += 900;
+                    break;
+                case 'K':
+                    total += 10000 + BoardScript.kingEarlyBonus[row, col];
                     break;
                 default:
                     break;
@@ -940,24 +943,28 @@ public class PieceScript : MonoBehaviour
             switch (BoardScript.board[row, col])
             {
                 case 'p':
-                    total -= 100;
+                    total += -100;
                     break;
                 case 'n':
-                    total -= 300;
+                    total += (-300 - BoardScript.knightBonus[row, col]);
                     break;
                 case 'b':
-                    total -= 300;
+                    total += -300;
                     break;
                 case 'r':
-                    total -= 500;
+                    total += -500;
                     break;
                 case 'q':
-                    total -= 900;
+                    total += -900;
+                    break;
+                case 'k':
+                    total += (-10000 - BoardScript.kingEarlyBonus[row, col]);
                     break;
                 default:
                     break;
             }
         }
+
         return total;
     }
     public static bool moveIsLegalAndMake(Move move)
