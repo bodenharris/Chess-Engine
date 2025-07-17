@@ -9,6 +9,7 @@ public class PieceScript : MonoBehaviour
     private bool isDragging = false;
     private int ix;
     private int iy;
+    public static int engineDepth = 2;
     void OnMouseDown()
     {
         isDragging = true;
@@ -40,7 +41,11 @@ public class PieceScript : MonoBehaviour
             BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-            engineMove(4, false, -100000, 100000);
+            if(engineMove(engineDepth, false, -100000, 100000) == 100000)
+            {
+                UnityEngine.Debug.Log("White wins by checkmate");
+                return;
+            }
             stopwatch.Stop();
             UnityEngine.Debug.Log("Engine move took: " + stopwatch.ElapsedMilliseconds + " ms");
             makeMove(BoardScript.bestMove);
@@ -162,11 +167,11 @@ public class PieceScript : MonoBehaviour
                 //White Castles
                 else if (char.IsUpper(BoardScript.board[iy, ix]) && iy == 7 && fy == 7 && System.Math.Abs(ix - fx) == 2 && !squareIsAttacked(7, 4)) 
                 {
-                    if (BoardScript.whiteCanLongCastle && BoardScript.whiteCanCastle && fx == 2 && BoardScript.board[7, 3] == '#' && BoardScript.board[7, 2] == '#' && BoardScript.board[7, 1] == '#' && !squareIsAttacked(7, 3) && !squareIsAttacked(7, 2))
+                    if (BoardScript.whiteCanLongCastle && fx == 2 && BoardScript.board[7, 3] == '#' && BoardScript.board[7, 2] == '#' && BoardScript.board[7, 1] == '#' && !squareIsAttacked(7, 3) && !squareIsAttacked(7, 2))
                     {
                         break;
                     }
-                    if (BoardScript.whiteCanShortCastle && BoardScript.whiteCanCastle && fx == 6 && BoardScript.board[7, 5] == '#' && BoardScript.board[7, 6] == '#' && !squareIsAttacked(7, 5) && !squareIsAttacked(7, 4))
+                    if (BoardScript.whiteCanShortCastle && fx == 6 && BoardScript.board[7, 5] == '#' && BoardScript.board[7, 6] == '#' && !squareIsAttacked(7, 5) && !squareIsAttacked(7, 4))
                     {
                         break;
                     }
@@ -174,11 +179,11 @@ public class PieceScript : MonoBehaviour
                 //Black Castles
                 else if (char.IsLower(BoardScript.board[iy, ix]) && iy == 0 && fy == 0 && System.Math.Abs(ix - fx) == 2 && !squareIsAttacked(0, 4)) 
                 {
-                    if (BoardScript.blackCanLongCastle && BoardScript.blackCanCastle && fx == 2 && BoardScript.board[0, 3] == '#' && BoardScript.board[0, 2] == '#' && BoardScript.board[0, 1] == '#' && !squareIsAttacked(0, 3) && !squareIsAttacked(0, 2))
+                    if (BoardScript.blackCanLongCastle && fx == 2 && BoardScript.board[0, 3] == '#' && BoardScript.board[0, 2] == '#' && BoardScript.board[0, 1] == '#' && !squareIsAttacked(0, 3) && !squareIsAttacked(0, 2))
                     {
                         break;
                     }
-                    if (BoardScript.blackCanShortCastle && BoardScript.blackCanCastle && fx == 6 && BoardScript.board[0, 5] == '#' && BoardScript.board[0, 6] == '#' && !squareIsAttacked(0, 5) && !squareIsAttacked(0, 6))
+                    if (BoardScript.blackCanShortCastle && fx == 6 && BoardScript.board[0, 5] == '#' && BoardScript.board[0, 6] == '#' && !squareIsAttacked(0, 5) && !squareIsAttacked(0, 6))
                     {
                         break;
                     }
@@ -260,6 +265,8 @@ public class PieceScript : MonoBehaviour
         int ix = move.ix;
         int fy = move.fy;
         int fx = move.fx;
+        char piece = move.piece;
+        char capture = move.capture;
 
         //Update Piece HashSets
         if (char.IsUpper(BoardScript.board[iy, ix]))
@@ -302,66 +309,69 @@ public class PieceScript : MonoBehaviour
             }
         }
 
-        //Tracking King Movement and castle rights for rooks
+        //Tracking King Movement
         if (BoardScript.board[iy, ix] == 'K')
         {
             BoardScript.whiteKingPos = (fy, fx);
-            BoardScript.whiteCanCastle = false;
-        }
-        else
-        if (BoardScript.board[iy, ix] == 'k')
-        {
-            BoardScript.blackKingPos = (fy, fx);
-            BoardScript.blackCanCastle = false;
-        }
-        //Black Castle Rights
-        if (iy == 0) 
-        {
-            if (ix == 0)
+            if (BoardScript.whiteCanLongCastle)
             {
-                BoardScript.blackCanLongCastle = false;
-            }
-            else if (ix == 7)
-            {
-                BoardScript.blackCanShortCastle = false;
-            }
-        }
-        //White Castle Rights
-        else if (iy == 7) 
-        {
-            if (ix == 0)
-            {
+                move.whiteLongCastleRightsFlag = true;
                 BoardScript.whiteCanLongCastle = false;
             }
-            else if (ix == 7)
+            if (BoardScript.whiteCanShortCastle)
             {
+                move.whiteShortCastleRightsFlag = true;
                 BoardScript.whiteCanShortCastle = false;
             }
         }
-        //Black Castle Rights
-        if (fy == 0) 
+        else if (BoardScript.board[iy, ix] == 'k')
         {
-            if (fx == 0)
+            if(BoardScript.blackCanLongCastle)
             {
+                move.blackLongCastleRightsFlag = true;
                 BoardScript.blackCanLongCastle = false;
             }
-            else if (fx == 7)
+            if (BoardScript.blackCanShortCastle)
             {
+                move.blackShortCastleRightsFlag = true;
                 BoardScript.blackCanShortCastle = false;
             }
         }
-        //White Castle Rights
-        else if (fy == 7) 
+
+        //Update Rook Castle Rights
+        if((ix == 0 && iy == 0 && piece == 'r') || (fy == 0 && fx == 0 && capture == 'r'))
         {
-            if (fx == 0)
+            if (BoardScript.blackCanLongCastle)
             {
+                move.blackLongCastleRightsFlag = true;
+                BoardScript.blackCanLongCastle = false;
+            }
+        }
+        if ((ix == 7 && iy == 0 && piece == 'r') || (fy == 0 && fx == 7 && capture == 'r'))
+        {
+            if (BoardScript.blackCanShortCastle)
+            {
+                move.blackShortCastleRightsFlag = true;
+                BoardScript.blackCanShortCastle = false;
+            }
+        }
+        if ((ix == 0 && iy == 7 && piece == 'R') || (fy == 7 && fx == 0 && capture == 'R'))
+        {
+            if (BoardScript.whiteCanLongCastle)
+            {
+                move.whiteLongCastleRightsFlag = true;
                 BoardScript.whiteCanLongCastle = false;
             }
-            else if (fx == 7)
+        }
+        if ((ix == 7 && iy == 7 && piece == 'R') || (fy == 7 && fx == 7 && capture == 'R'))
+        {
+            if (BoardScript.whiteCanShortCastle)
             {
+                move.whiteShortCastleRightsFlag = true;
                 BoardScript.whiteCanShortCastle = false;
             }
         }
+
 
         //White Castles
         if (BoardScript.board[iy, ix] == 'K' && iy == 7 && System.Math.Abs(ix - fx) == 2)
@@ -498,8 +508,27 @@ public class PieceScript : MonoBehaviour
         char piece = move.piece;
         char capture = move.capture;
 
+        //Update Castle Rights
+        if (move.whiteLongCastleRightsFlag)
+        {
+            BoardScript.whiteCanLongCastle = true;
+        }
+        if (move.whiteShortCastleRightsFlag)
+        {
+            BoardScript.whiteCanShortCastle = true;
+        }
+        if (move.blackLongCastleRightsFlag)
+        {
+            BoardScript.blackCanLongCastle = true;
+        }
+        if (move.blackShortCastleRightsFlag)
+        {
+            BoardScript.blackCanShortCastle = true;
+        }
+
+
         //Check For King Moves
-        if(char.ToLower(piece) == 'k')
+        if (char.ToLower(piece) == 'k')
         {
             if (piece == 'K')
             {
@@ -523,8 +552,6 @@ public class PieceScript : MonoBehaviour
                     BoardScript.board[7, 2] = '#';
                     BoardScript.board[7, 3] = '#';
                     BoardScript.board[7, 4] = 'K';
-                    BoardScript.whiteCanLongCastle = true;
-                    BoardScript.whiteCanCastle = true;
                     BoardScript.whitePieces.Add((7, 0));
                     BoardScript.whitePieces.Remove((7, 2));
                     BoardScript.whitePieces.Remove((7, 3));
@@ -537,8 +564,6 @@ public class PieceScript : MonoBehaviour
                     BoardScript.board[7, 5] = '#';
                     BoardScript.board[7, 6] = '#';
                     BoardScript.board[7, 7] = 'R';
-                    BoardScript.whiteCanShortCastle = true;
-                    BoardScript.whiteCanCastle = true;
                     BoardScript.whitePieces.Add((7, 4));
                     BoardScript.whitePieces.Remove((7, 5));
                     BoardScript.whitePieces.Remove((7, 6));
@@ -554,8 +579,6 @@ public class PieceScript : MonoBehaviour
                     BoardScript.board[0, 2] = '#';
                     BoardScript.board[0, 3] = '#';
                     BoardScript.board[0, 4] = 'k';
-                    BoardScript.blackCanLongCastle = true;
-                    BoardScript.blackCanCastle = true;
                     BoardScript.blackPieces.Add((0, 0));
                     BoardScript.blackPieces.Remove((0, 2));
                     BoardScript.blackPieces.Remove((0, 3));
@@ -568,8 +591,6 @@ public class PieceScript : MonoBehaviour
                     BoardScript.board[0, 5] = '#';
                     BoardScript.board[0, 6] = '#';            
                     BoardScript.board[0, 7] = 'r';
-                    BoardScript.blackCanShortCastle = true;
-                    BoardScript.blackCanCastle = true;
                     BoardScript.blackPieces.Add((0, 4));
                     BoardScript.blackPieces.Remove((0, 5));
                     BoardScript.blackPieces.Remove((0, 6));
@@ -804,11 +825,11 @@ public class PieceScript : MonoBehaviour
                 //White Castles
                 else if (char.IsUpper(BoardScript.board[iy, ix]) && iy == 7 && fy == 7 && System.Math.Abs(ix - fx) == 2)
                 {
-                    if (BoardScript.whiteCanLongCastle && BoardScript.whiteCanCastle && fx == 2 && BoardScript.board[7, 3] == '#' && BoardScript.board[7, 2] == '#' && BoardScript.board[7, 1] == '#' && !squareIsAttacked(7, 3) && !squareIsAttacked(7, 2))
+                    if (BoardScript.whiteCanLongCastle && fx == 2 && BoardScript.board[7, 3] == '#' && BoardScript.board[7, 2] == '#' && BoardScript.board[7, 1] == '#' && !squareIsAttacked(7, 3) && !squareIsAttacked(7, 2))
                     {
                         break;
                     }
-                    if (BoardScript.whiteCanShortCastle && BoardScript.whiteCanCastle && fx == 6 && BoardScript.board[7, 5] == '#' && BoardScript.board[7, 6] == '#' && !squareIsAttacked(7, 5) && !squareIsAttacked(7, 4))
+                    if (BoardScript.whiteCanShortCastle && fx == 6 && BoardScript.board[7, 5] == '#' && BoardScript.board[7, 6] == '#' && !squareIsAttacked(7, 5) && !squareIsAttacked(7, 4))
                     {
                         break;
                     }
@@ -816,11 +837,11 @@ public class PieceScript : MonoBehaviour
                 //Black Castles
                 else if (char.IsLower(BoardScript.board[iy, ix]) && iy == 0 && fy == 0 && System.Math.Abs(ix - fx) == 2 && !squareIsAttacked(0, 4))
                 {
-                    if (BoardScript.blackCanLongCastle && BoardScript.blackCanCastle && fx == 2 && BoardScript.board[0, 3] == '#' && BoardScript.board[0, 2] == '#' && BoardScript.board[0, 1] == '#' && !squareIsAttacked(0, 3) && !squareIsAttacked(0, 2))
+                    if (BoardScript.blackCanLongCastle && fx == 2 && BoardScript.board[0, 3] == '#' && BoardScript.board[0, 2] == '#' && BoardScript.board[0, 1] == '#' && !squareIsAttacked(0, 3) && !squareIsAttacked(0, 2))
                     {
                         break;
                     }
-                    if (BoardScript.blackCanShortCastle && BoardScript.blackCanCastle && fx == 6 && BoardScript.board[0, 5] == '#' && BoardScript.board[0, 6] == '#' && !squareIsAttacked(0, 5) && !squareIsAttacked(0, 6))
+                    if (BoardScript.blackCanShortCastle && fx == 6 && BoardScript.board[0, 5] == '#' && BoardScript.board[0, 6] == '#' && !squareIsAttacked(0, 5) && !squareIsAttacked(0, 6))
                     {
                         break;
                     }
@@ -882,7 +903,7 @@ public class PieceScript : MonoBehaviour
                     if (eval > maxEval)
                     {
                         maxEval = eval;
-                        if (depth == 4)
+                        if (depth == engineDepth)
                         {
                             BoardScript.bestMove = move;
                         }
@@ -910,7 +931,7 @@ public class PieceScript : MonoBehaviour
                     if(eval < minEval)
                     {
                         minEval = eval;
-                        if(depth == 4)
+                        if(depth == engineDepth)
                         {
                             BoardScript.bestMove = move;
                         }    
@@ -1064,8 +1085,10 @@ public class Move
     public int fx;
     public char piece;
     public char capture;
-    public bool longCastleRightsUpdate;
-    public bool shortCastleRightsUpdate;
+    public bool blackLongCastleRightsFlag;
+    public bool blackShortCastleRightsFlag;
+    public bool whiteLongCastleRightsFlag;
+    public bool whiteShortCastleRightsFlag;
     public int scoreGuess;
 
     public Move(int iy, int ix, int fy, int fx, char piece, char capture) 
@@ -1077,5 +1100,9 @@ public class Move
         this.piece = piece;
         this.capture = capture;
         this.scoreGuess = 0;
+        this.blackShortCastleRightsFlag = false;
+        this.blackLongCastleRightsFlag = false;
+        this.whiteShortCastleRightsFlag = false;
+        this.whiteLongCastleRightsFlag = false;
     }
 }

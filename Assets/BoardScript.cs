@@ -18,8 +18,9 @@ public class BoardScript : MonoBehaviour
     public Sprite whiteQueenSprite;
     public Sprite whiteKingSprite;
     public Sprite whitePawnSprite;
-    public static string startingPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    //public static string startingPos = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R2QK2R";
     //public static string startingPos = "4k2r/pppp4/8/8/8/8/4PPPP/4K2R";
+    public static string startingPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     public static HashSet<(int row, int col)> whitePieces = new HashSet<(int, int)>();
     public static HashSet<(int row, int col)> blackPieces = new HashSet<(int, int)>();
     public static bool[] whitePawnsEP = { false, false, false, false, false, false, false, false };
@@ -28,8 +29,6 @@ public class BoardScript : MonoBehaviour
     public static bool whiteCanShortCastle = true;
     public static bool blackCanLongCastle = true;
     public static bool blackCanShortCastle = true;
-    public static bool whiteCanCastle = true;
-    public static bool blackCanCastle = true;
     public static (int row, int col) whiteKingPos = (7, 4);
     public static (int row, int col) blackKingPos = (0, 4);
     public static char[,] board = new char[8, 8];
