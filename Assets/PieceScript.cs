@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Diagnostics;
+using System.Linq;
 
 public class PieceScript : MonoBehaviour
 {
@@ -1019,20 +1020,27 @@ public class PieceScript : MonoBehaviour
     }
     public static List<Move> orderMoves(List<Move> moves)
     {
-        int index = 0;
-        List<Move> orderedMoves = new List<Move>();
         //Captures first
         foreach(Move move in moves)
         {
-            if(char.ToLower(move.capture) != '#')
+            if((char.ToLower(move.capture) == 'q'))
             {
-                orderedMoves.Insert(0, move);
+                move.scoreGuess += 40;
             }
-            else
+            if(char.ToLower(move.piece) == 'p' && move.capture != '#')
             {
-                orderedMoves.Add(move);
+                if (char.ToLower(move.piece) != 'p')
+                {
+                    move.scoreGuess += 20;
+                }
+                move.scoreGuess += 10;
+            }
+            else if(char.ToLower(move.piece) != 'q' && move.capture != '#')
+            {
+                move.scoreGuess += 1;
             }
         }
+        List<Move> orderedMoves = moves.OrderByDescending(m => m.scoreGuess).ToList();
         return orderedMoves;
     }
 
@@ -1058,7 +1066,7 @@ public class Move
     public char capture;
     public bool longCastleRightsUpdate;
     public bool shortCastleRightsUpdate;
-    public int eval;
+    public int scoreGuess;
 
     public Move(int iy, int ix, int fy, int fx, char piece, char capture) 
     {
@@ -1068,6 +1076,6 @@ public class Move
         this.fx = fx;
         this.piece = piece;
         this.capture = capture;
-        this.eval = 0;
+        this.scoreGuess = 0;
     }
 }
