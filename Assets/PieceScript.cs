@@ -9,7 +9,8 @@ public class PieceScript : MonoBehaviour
     private bool isDragging = false;
     private int ix;
     private int iy;
-    public static int engineDepth = 2;
+    public static int engineDepth = 4;
+    public static int nodesSearched = 0;
     void OnMouseDown()
     {
         isDragging = true;
@@ -41,13 +42,15 @@ public class PieceScript : MonoBehaviour
             BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-            if(engineMove(engineDepth, false, -100000, 100000) == 100000)
+            if(engineMove(engineDepth, false, -100000, 100000) == -100000)
             {
                 UnityEngine.Debug.Log("White wins by checkmate");
                 return;
             }
             stopwatch.Stop();
             UnityEngine.Debug.Log("Engine move took: " + stopwatch.ElapsedMilliseconds + " ms");
+            UnityEngine.Debug.Log("Nodes searched: " + nodesSearched);
+            nodesSearched = 0;
             makeMove(BoardScript.bestMove);
             unityBoard.updateDisplayBoard();
             BoardScript.whiteTurn = !BoardScript.whiteTurn;
@@ -899,6 +902,7 @@ public class PieceScript : MonoBehaviour
                 if (moveIsLegalAndMake(move))
                 {
                     eval = engineMove(depth - 1, false, alpha, beta);
+                    nodesSearched++;
                     undoMove(move);
                     if (eval > maxEval)
                     {
