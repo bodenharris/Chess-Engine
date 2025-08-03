@@ -42,9 +42,14 @@ public class PieceScript : MonoBehaviour
             BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
-            if(engineMove(engineDepth, false, -100000, 100000) == -100000)
+            int result = engineMove(engineDepth, false, -100000, 100000);
+            if (result == 100000)
             {
                 UnityEngine.Debug.Log("White wins by checkmate");
+                return;
+            }else if (result == -100000)
+            {
+                UnityEngine.Debug.Log("Black wins by checkmate");
                 return;
             }
             stopwatch.Stop();
@@ -237,10 +242,9 @@ public class PieceScript : MonoBehaviour
         if (moveIsPsuedoLegal(iy, ix, fy, fx))
         {
             makeMove(move);
-            BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
-            BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
             if (char.IsUpper(move.piece)) 
             {
+                BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
                 if (squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
                 {
                     undoMove(move);
@@ -251,6 +255,7 @@ public class PieceScript : MonoBehaviour
             }
             else
             {
+                BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
                 if (squareIsAttacked(BoardScript.blackKingPos.row, BoardScript.blackKingPos.col))
                 {
                     undoMove(move);
@@ -691,7 +696,6 @@ public class PieceScript : MonoBehaviour
         List<Move> moves = new List<Move>();
         foreach ((int row, int col) piece in pieces)
         {
-            
             for (int fx = 0; fx < 8; fx++)
             {
                 for (int fy = 0; fy < 8; fy++)
@@ -704,6 +708,17 @@ public class PieceScript : MonoBehaviour
                 }
             }
         }
+        return moves;
+    }
+    public static List<Move> generateLegalMoves(HashSet<(int row, int col)> pieces)
+    {
+        List<Move> moves = new List<Move>();
+        moves = generatePsuedoLegalMoves(pieces);
+        foreach(Move move in moves)
+        {
+            
+        }
+
         return moves;
     }
     public static void PrintMoves(List<Move> moves)
@@ -895,8 +910,7 @@ public class PieceScript : MonoBehaviour
         if(maximizingPlayer)
         {
             int maxEval = -100000;
-            BoardScript.whitePsuedoLegalMoves = orderMoves(generatePsuedoLegalMoves(BoardScript.whitePieces));
-            //BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
+            BoardScript.whitePsuedoLegalMoves = orderMoves(BoardScript.whitePsuedoLegalMoves);
             foreach (Move move in BoardScript.whitePsuedoLegalMoves)
             {
                 if (moveIsLegalAndMake(move))
@@ -924,8 +938,7 @@ public class PieceScript : MonoBehaviour
         else
         {
             int minEval = 100000;
-            BoardScript.blackPsuedoLegalMoves = orderMoves(generatePsuedoLegalMoves(BoardScript.blackPieces));
-            //BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
+            BoardScript.blackPsuedoLegalMoves = orderMoves(BoardScript.blackPsuedoLegalMoves);
             foreach (Move move in BoardScript.blackPsuedoLegalMoves)
             {
                 if (moveIsLegalAndMake(move))
@@ -1017,31 +1030,27 @@ public class PieceScript : MonoBehaviour
         int fy = move.fy;
         int fx = move.fx;
 
-        if (moveIsPsuedoLegal(iy, ix, fy, fx))
+        makeMove(move);
+        if (char.IsUpper(move.piece))
         {
-            makeMove(move);
-            BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
             BoardScript.blackPsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.blackPieces);
-            if (char.IsUpper(move.piece))
+            if (squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
             {
-                if (squareIsAttacked(BoardScript.whiteKingPos.row, BoardScript.whiteKingPos.col))
-                {
-                    undoMove(move);
-                    return false;
-                }
-                return true;
+                undoMove(move);
+                return false;
             }
-            else
-            {
-                if (squareIsAttacked(BoardScript.blackKingPos.row, BoardScript.blackKingPos.col))
-                {
-                    undoMove(move);
-                    return false;
-                }
-                return true;
-            }
+            return true;
         }
-        return false;
+        else
+        {
+            BoardScript.whitePsuedoLegalMoves = generatePsuedoLegalMoves(BoardScript.whitePieces);
+            if (squareIsAttacked(BoardScript.blackKingPos.row, BoardScript.blackKingPos.col))
+            {
+                undoMove(move);
+                return false;
+            }
+            return true;
+        }
     }
     public static List<Move> orderMoves(List<Move> moves)
     {
