@@ -924,7 +924,7 @@ public class PieceScript : MonoBehaviour
                         if (depth == engineDepth)
                         {
                             BoardScript.bestMove = move;
-                        }
+                        } 
                     }
                     alpha = System.Math.Max(alpha, eval);
                     if (beta <= alpha)
@@ -987,7 +987,7 @@ public class PieceScript : MonoBehaviour
                     total += 900;
                     break;
                 case 'K':
-                    total += 10000 + BoardScript.kingEarlyBonus[row, col];
+                    total += (10000 + BoardScript.kingEarlyBonus[row, col]);
                     break;
                 default:
                     break;
