@@ -1057,21 +1057,51 @@ public class PieceScript : MonoBehaviour
         //Captures first
         foreach(Move move in moves)
         {
-            if((char.ToLower(move.capture) == 'q'))
+            if(move.capture != '#')
             {
-                move.scoreGuess += 40;
-            }
-            if(char.ToLower(move.piece) == 'p' && move.capture != '#')
-            {
-                if (char.ToLower(move.piece) != 'p')
+                switch (char.ToLower(move.piece))
                 {
-                    move.scoreGuess += 20;
+                    case 'p':
+                        move.scoreGuess += 900;
+                        break;
+                    case 'b':
+                        move.scoreGuess += 500;
+                        break;
+                    case 'n':
+                        move.scoreGuess += 500;
+                        break;
+                    case 'r':
+                        move.scoreGuess += 300;
+                        break;
+                    case 'q':
+                        move.scoreGuess += 100;
+                        break;
+                    case 'k':
+                        move.scoreGuess += 10;
+                        break;
+                    default:
+                        break;
                 }
-                move.scoreGuess += 10;
-            }
-            else if(char.ToLower(move.piece) != 'q' && move.capture != '#')
-            {
-                move.scoreGuess += 1;
+                switch (char.ToLower(move.capture))
+                {
+                    case 'p':
+                        move.scoreGuess += 100;
+                        break;
+                    case 'b':
+                        move.scoreGuess += 300;
+                        break;
+                    case 'n':
+                        move.scoreGuess += 300;
+                        break;
+                    case 'r':
+                        move.scoreGuess += 500;
+                        break;
+                    case 'q':
+                        move.scoreGuess += 900;
+                        break;
+                    default:
+                        break;
+                }
             }
         }
         List<Move> orderedMoves = moves.OrderByDescending(m => m.scoreGuess).ToList();
